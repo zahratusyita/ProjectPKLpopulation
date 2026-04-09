@@ -90,32 +90,45 @@
     <div class="content-header pt-4">
         <section class="container-fluid">
             <!-- Header Section with Buttons -->
-            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 mt-2">
-                <div class="mb-3 mb-md-0">
-                    <h1 class="m-0 font-weight-bold" style="color: #1e3a5f !important; font-size: 1.8rem;">Data Ternak</h1>
-                    <p class="text-muted mb-0 mt-1" style="font-size: 0.95rem;">Kelola dan pantau data populasi ternak yang terdaftar.</p>
-                </div>
-                
-                <div class="d-flex flex-column align-items-md-end">
-                    <div class="px-3 py-2 bg-white d-inline-flex align-items-center rounded-pill shadow-sm border border-light mb-3">
-                        <i class="fas fa-calendar-alt mr-2" style="color:#1e3a5f; font-size: 1.2rem;"></i>
-                        <strong style="color: #475569; font-size: 0.9rem;" class="mr-2">Tahun Data:</strong> 
-                        <span class="badge px-3 py-1 rounded-pill" style="background-color:#1e3a5f; color:#fff; font-size:0.95rem; font-weight:700;">
-                            {{ session()->get('tahun_data') ?? date('Y') }}
-                        </span>
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-start mb-4 mt-2">
+                <div class="mb-3 mb-md-0 w-100">
+                    <div class="d-flex justify-content-between align-items-center w-100">
+                        <div>
+                            <h1 class="m-0 font-weight-bold" style="color: #1e3a5f !important; font-size: 1.8rem;">Data Ternak</h1>
+                            <p class="text-muted mb-0 mt-1" style="font-size: 0.95rem;">Kelola dan pantau data populasi ternak yang terdaftar.</p>
+                        </div>
+                        <!-- Mobile Year Badge -->
+                        <div class="d-flex flex-column align-items-md-end d-md-none">
+                            <div class="px-3 py-2 bg-white d-inline-flex align-items-center rounded-pill shadow-sm border border-light">
+                                <i class="fas fa-calendar-alt mr-2" style="color:#1e3a5f; font-size: 1.2rem;"></i>
+                                <strong style="color: #475569; font-size: 0.9rem;" class="mr-2">Tahun Data:</strong>
+                                <span class="badge px-3 py-1 rounded-pill" style="background-color:#1e3a5f; color:#fff; font-size:0.95rem; font-weight:700;">
+                                    {{ session()->get('tahun_data') ?? date('Y') }}
+                                </span>
+                            </div>
+                        </div>
                     </div>
                     
-                    <div class="d-flex flex-wrap gap-2 justify-content-md-end">
+                    <div class="d-flex flex-wrap mt-3 align-items-center" style="gap: 0.75rem;">
                         @if(Auth::user()->user_type == 'C')
                             @if($status_verifikasi['status_pengajuan'] == 0)
-                            <a href="{{ route('ternak.form') }}" class="btn btn-primary btn-modern shadow-sm mr-2 mb-2" style="background-color: #1e3a5f; border-color: #1e3a5f;">
+                            <a href="{{ route('ternak.form') }}" class="btn btn-primary btn-modern shadow-sm" style="background-color: #1e3a5f; border-color: #1e3a5f;">
                                 <i class="fas fa-plus mr-1"></i> Tambah Data
                             </a>
-                            <button type="button" class="btn btn-outline-primary btn-modern shadow-sm mr-2 mb-2" data-toggle="modal" data-target="#modal-import-ternak" style="color: #1e3a5f; border-color: #1e3a5f;">
+                            <button type="button" class="btn btn-primary btn-modern shadow-sm" data-toggle="modal" data-target="#modal-import-ternak" style="background-color: #1e3a5f; border-color: #1e3a5f;">
                                 <i class="fas fa-file-import mr-1"></i> Import
                             </button>
                             @endif
                         @endif
+                    </div>
+                </div>
+                <div class="d-flex flex-column align-items-md-end d-none d-md-block pl-3">
+                    <div class="px-3 py-2 bg-white d-inline-flex align-items-center rounded-pill shadow-sm border border-light">
+                        <i class="fas fa-calendar-alt mr-2" style="color:#1e3a5f; font-size: 1.2rem;"></i>
+                        <strong style="color: #475569; font-size: 0.9rem;" class="mr-2">Tahun Data:</strong>
+                        <span class="badge px-3 py-1 rounded-pill" style="background-color:#1e3a5f; color:#fff; font-size:0.95rem; font-weight:700;">
+                            {{ session()->get('tahun_data') ?? date('Y') }}
+                        </span>
                     </div>
                 </div>
             </div>
@@ -143,27 +156,7 @@
             @endif
 
             <!-- Pengajuan Bar -->
-            @if(Auth::user()->user_type == 'B' || Auth::user()->user_type == 'C')
-                <div class="mb-4">
-                    @if($status_verifikasi['status_pengajuan'] == 0)
-                        <a href="{{ route('ajukan') }}" class="btn btn-primary btn-modern shadow-sm" style="background-color: #1e3a5f; border-color: #1e3a5f;"><i class="fas fa-paper-plane mr-1"></i> Ajukan Data Tahun Ini</a>
-                    @elseif($status_verifikasi['status_pengajuan'] == 1)
-                        @if((Auth::user()->user_type == 'B' && $status_verifikasi['status_verifikasi'] == 0) || (Auth::user()->user_type == 'C' && $status_verifikasi['status_verifikasi'] == null))
-                            <button class="btn btn-warning btn-modern shadow-sm border-0"><i class="fas fa-hourglass-half mr-1"></i> Menunggu Verifikasi Di {{ Auth::user()->user_type == 'B' ? 'Provinsi' : 'Kabupaten/Kota' }}</button>
-                        @elseif($status_verifikasi['status_verifikasi'] == 1)
-                            <button class="btn btn-primary btn-modern shadow-sm border-0" style="background-color: #1e3a5f;"><i class="fas fa-check-circle mr-1"></i> Data Telah Diverifikasi Di {{ Auth::user()->user_type == 'B' ? 'Provinsi' : 'Kabupaten/Kota' }}</button>
-                        @elseif($status_verifikasi['status_verifikasi'] == 2)
-                            <div class="alert alert-warning border-0 shadow-sm rounded-lg">
-                                <p><b>Catatan Revisi:</b> {{ $status_verifikasi['catatan'] }}</p>
-                                <form action="{{ route('verifikasi.update', $status_verifikasi['id']) }}" method="POST" class="mt-2">
-                                    {{ csrf_field() }}
-                                    <button type="submit" class="btn btn-primary btn-modern shadow-sm" style="background-color: #1e3a5f; border-color: #1e3a5f;"><i class="fas fa-paper-plane mr-1"></i> Ajukan Ulang Data Tahun Ini</button>
-                                </form>
-                            </div>
-                        @endif
-                    @endif
-                </div>
-            @endif
+            <!-- Pengajuan bar dipindah ke area footer -->
 
             <div class="row">
                 <div class="col-12">
@@ -412,12 +405,37 @@
                                         dari Total <strong>{{ $ternak->total() }}</strong> Data
                                     </div>
                                     <div class="d-flex flex-wrap align-items-center justify-content-end mt-2 mt-md-0">
+                                        @if(Auth::user()->user_type == 'C')
+                                            @if($status_verifikasi['status_pengajuan'] == 0)
+                                                <a href="{{ route('ajukan') }}" class="btn btn-primary btn-modern shadow-sm mr-3" style="background-color: #1e3a5f; border-color: #1e3a5f;"><i class="fas fa-paper-plane mr-1"></i> Ajukan Data</a>
+                                            @elseif($status_verifikasi['status_pengajuan'] == 1)
+                                                @if($status_verifikasi['status_verifikasi'] == null)
+                                                    <button class="btn btn-warning btn-modern shadow-sm border-0 mr-3"><i class="fas fa-hourglass-half mr-1"></i> Menunggu Verifikasi</button>
+                                                    @if(!empty($status_verifikasi['id']))
+                                                        <form action="{{ route('verifikasi.cancel', $status_verifikasi['id']) }}" method="POST" class="m-0 mr-3">
+                                                            @csrf
+                                                            <button type="submit" class="btn btn-outline-danger btn-modern shadow-sm" onclick="return confirm('Batalkan pengajuan data tahun ini?')">
+                                                                <i class="fas fa-times mr-1"></i> Batalkan Pengajuan
+                                                            </button>
+                                                        </form>
+                                                    @endif
+                                                @elseif($status_verifikasi['status_verifikasi'] == 1)
+                                                    <button class="btn btn-primary btn-modern shadow-sm border-0 mr-3" style="background-color: #1e3a5f;"><i class="fas fa-check-circle mr-1"></i> Data Tervalidasi</button>
+                                                @elseif($status_verifikasi['status_verifikasi'] == 2)
+                                                    <form action="{{ route('verifikasi.update', $status_verifikasi['id']) }}" method="POST" class="m-0 mr-3 d-flex align-items-center">
+                                                        {{ csrf_field() }}
+                                                        <span class="text-danger small mr-2"><b>Revisi:</b> {{ $status_verifikasi['catatan'] }}</span>
+                                                        <button type="submit" class="btn btn-danger btn-modern shadow-sm"><i class="fas fa-paper-plane mr-1"></i> Ajukan Ulang Data</button>
+                                                    </form>
+                                                @endif
+                                            @endif
+                                        @endif
                                         @if(!empty($_REQUEST['tahun']) OR !empty($_REQUEST['search']) OR !empty($_REQUEST['kab_kota']) OR !empty($_REQUEST['kecamatan']) OR !empty($_REQUEST['desa_kel']))
-                                        <a href="{{ route('ternak.export').'?kab_kota='.(isset($_REQUEST['kab_kota'])?$_REQUEST['kab_kota']:'').'&kecamatan='.(isset($_REQUEST['kecamatan'])?$_REQUEST['kecamatan']:'').'&desa_kel='.(isset($_REQUEST['desa_kel'])?$_REQUEST['desa_kel']:'').'&search='.(isset($_REQUEST['search'])?$_REQUEST['search']:'') }}" class="btn btn-sm shadow-sm mr-3" style="background-color: #1e3a5f; border-color: #1e3a5f; color: #ffffff; width: 90px; text-align: center;">
+                                        <a href="{{ route('ternak.export').'?kab_kota='.(isset($_REQUEST['kab_kota'])?$_REQUEST['kab_kota']:'').'&kecamatan='.(isset($_REQUEST['kecamatan'])?$_REQUEST['kecamatan']:'').'&desa_kel='.(isset($_REQUEST['desa_kel'])?$_REQUEST['desa_kel']:'').'&search='.(isset($_REQUEST['search'])?$_REQUEST['search']:'') }}" class="btn btn-primary btn-modern shadow-sm mr-3" style="background-color: #1e3a5f; border-color: #1e3a5f;">
                                             <i class="fas fa-file-export"></i> Export
                                         </a>
                                         @else
-                                        <a href="{{ route('ternak.export').'?kab_kota=&kecamatan=&desa_kel=&search=' }}" class="btn btn-sm shadow-sm mr-3" style="background-color: #1e3a5f; border-color: #1e3a5f; color: #ffffff; width: 90px; text-align: center;">
+                                        <a href="{{ route('ternak.export').'?kab_kota=&kecamatan=&desa_kel=&search=' }}" class="btn btn-primary btn-modern shadow-sm mr-3" style="background-color: #1e3a5f; border-color: #1e3a5f;">
                                             <i class="fas fa-file-export"></i> Export
                                         </a>
                                         @endif

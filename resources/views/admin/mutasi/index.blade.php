@@ -71,6 +71,7 @@
 
 <?php
     $no = 1;
+    $isKelahiran = $jenis === 'kelahiran';
 ?>
 <div class="content content-wrapper border-0">
     <div class="content-header pt-4">
@@ -97,52 +98,22 @@
                         </div>
                     </div>
                     
-                    <div class="d-flex flex-wrap gap-2 mt-3 align-items-center">
+                    <div class="d-flex flex-wrap mt-3 align-items-center" style="gap: 0.75rem;">
                         @if(Auth::user()->user_type == 'C')
-                            @if($status_verifikasi['status_pengajuan'] == 0)
-                                <a href="{{ url('mutasi/'.$jenis.'/form') }}" class="btn btn-primary btn-modern shadow-sm" style="background-color: #1e3a5f; border-color: #1e3a5f;">
-                                    <i class="fas fa-plus mr-1"></i> Tambah Data
-                                </a>
-                            @endif
+                            <a href="{{ url('mutasi/'.$jenis.'/form') }}" class="btn btn-primary btn-modern shadow-sm" style="background-color: #1e3a5f; border-color: #1e3a5f;">
+                                <i class="fas fa-plus mr-1"></i> Tambah Data
+                            </a>
+                            <button type="button" class="btn btn-primary btn-modern shadow-sm" data-toggle="modal" data-target="#modal-import-mutasi" style="background-color: #1e3a5f; border-color: #1e3a5f;">
+                                <i class="fas fa-file-import mr-1"></i> Import Excel
+                            </button>
+                            <a href="{{ route('mutasi.template', ['jenis' => $jenis]) }}" class="btn btn-secondary btn-modern shadow-sm">
+                                <i class="fas fa-file-download mr-1"></i> Template Excel
+                            </a>
                         @endif
 
-                        @if(Auth::user()->user_type == 'B')
-                            @if($status_verifikasi['status_pengajuan'] == 0)
-                                <a href="{{ route('ajukan') }}" class="btn btn-primary btn-modern shadow-sm" style="background-color: #1e3a5f; border-color: #1e3a5f;"><i class="fas fa-paper-plane mr-1"></i> Ajukan Data Tahun Ini</a>
-                            @elseif($status_verifikasi['status_pengajuan'] == 1)
-                                @if($status_verifikasi['status_verifikasi'] == 0)
-                                    <button class="btn btn-warning btn-modern shadow-sm">Menunggu Verifikasi Di Provinsi</button>
-                                @elseif($status_verifikasi['status_verifikasi'] == 1)
-                                    <button class="btn btn-success btn-modern shadow-sm" style="background-color: #1e3a5f; border-color: #1e3a5f; color: #fff;">Data Telah Diverifikasi Di Provinsi</button>
-                                @else($status_verifikasi['status_verifikasi'] == 2)
-                                    <div class="d-flex align-items-center gap-2">
-                                        <p class="mb-0 text-danger mr-2"><b>Catatan:</b> {{ $status_verifikasi['catatan'] }}</p>
-                                        <form action="{{ route('verifikasi.update', $status_verifikasi['id']) }}" method="POST" class="m-0">
-                                            {{ csrf_field() }}
-                                            <button type="submit" class="btn btn-primary btn-modern shadow-sm" style="background-color: #1e3a5f; border-color: #1e3a5f;"><i class="fas fa-paper-plane mr-1"></i> Ajukan Ulang Data Tahun Ini</button>
-                                        </form>
-                                    </div>
-                                @endif
-                            @endif
-                        @elseif(Auth::user()->user_type == 'C')
-                            @if($status_verifikasi['status_pengajuan'] == 0)
-                                <a href="{{ route('ajukan') }}" class="btn btn-primary btn-modern shadow-sm" style="background-color: #1e3a5f; border-color: #1e3a5f;"><i class="fas fa-paper-plane mr-1"></i> Ajukan Data Tahun Ini</a>
-                            @elseif($status_verifikasi['status_pengajuan'] == 1)
-                                @if($status_verifikasi['status_verifikasi'] == null)
-                                    <button class="btn btn-warning btn-modern shadow-sm">Menunggu Verifikasi Di Kabupaten/Kota</button>
-                                @elseif($status_verifikasi['status_verifikasi'] == 1)
-                                    <button class="btn btn-success btn-modern shadow-sm" style="background-color: #1e3a5f; border-color: #1e3a5f; color: #fff;">Data Telah Diverifikasi Di Kabupaten/Kota</button>
-                                @elseif($status_verifikasi['status_verifikasi'] == 2)
-                                    <div class="d-flex align-items-center gap-2">
-                                        <p class="mb-0 text-danger mr-2"><b>Catatan:</b> {{ $status_verifikasi['catatan'] }}</p>
-                                        <form action="{{ route('verifikasi.update', $status_verifikasi['id']) }}" method="POST" class="m-0">
-                                            {{ csrf_field() }}
-                                            <button type="submit" class="btn btn-primary btn-modern shadow-sm" style="background-color: #1e3a5f; border-color: #1e3a5f;"><i class="fas fa-paper-plane mr-1"></i> Ajukan Ulang Data Tahun Ini</button>
-                                        </form>
-                                    </div>
-                                @endif
-                            @endif
-                        @endif
+                        <a href="{{ route('mutasi.export', ['jenis' => $jenis] + request()->except('_token')) }}" class="btn btn-primary btn-modern shadow-sm" style="background-color: #1e3a5f; border-color: #1e3a5f;">
+                            <i class="fas fa-file-export mr-1"></i> Export Excel
+                        </a>
                     </div>
                 </div>
                 
@@ -188,7 +159,7 @@
                             
                             <div class="card-header border-0 pb-0 pt-2">
                                 <div class="filter-section">
-                                <form class="form-row align-items-end" action="" method="GET">
+                                <form class="form-row align-items-end" action="{{ url('mutasi/'.$jenis) }}" method="GET">
                                     {{csrf_field()}}
                                     <div class="col-md mb-3 mb-md-0">
                                         <label class="text-dark font-weight-bold mb-2"><i class="fas fa-map-marker-alt mr-1"></i> Kabupaten/Kota</label>
@@ -196,13 +167,13 @@
                                             <select name="kab_kota" id="kab_kota" class="form-control border-0 shadow-sm rounded" style="padding: 0.5rem;">
                                                 <option value="">Semua Kab/Kota</option>
                                                 @foreach($kab_kota as $kk)
-                                                <option value="{{$kk->id}}">{{$kk->nama_kab_kota}}</option>
+                                                <option value="{{$kk->id}}" @selected(request('kab_kota') == $kk->id)>{{$kk->nama_kab_kota}}</option>
                                                 @endforeach
                                             </select>
                                         @elseif(Auth::user()->user_type == "B" or Auth::user()->user_type == "C")
                                             <select name="kab_kota" id="kab_kota" class="form-control border-0 shadow-sm rounded" style="padding: 0.5rem;">
                                                 @foreach($kab_kota as $kk)
-                                                <option value="{{$kk->id}}">{{$kk->nama_kab_kota}}</option>
+                                                <option value="{{$kk->id}}" @selected(request('kab_kota', $kk->id) == $kk->id)>{{$kk->nama_kab_kota}}</option>
                                                 @endforeach
                                             </select>
                                         @endif
@@ -217,7 +188,7 @@
                                             <select name="kecamatan" id="kecamatan" class="form-control border-0 shadow-sm rounded" style="padding: 0.5rem;">
                                                 <option value="">Semua Kecamatan</option>
                                                 @foreach($kecamatan as $kc)
-                                                <option value="{{ $kc->id }}">{{ $kc->nama_kecamatan }}</option>
+                                                <option value="{{ $kc->id }}" @selected(request('kecamatan') == $kc->id)>{{ $kc->nama_kecamatan }}</option>
                                                 @endforeach
                                             </select>
                                         @endif
@@ -226,11 +197,14 @@
                                         <label class="text-dark font-weight-bold mb-2"><i class="fas fa-home mr-1"></i> Desa/Kelurahan</label>
                                         <select name="desa_kel" id="desa_kel" class="form-control border-0 shadow-sm rounded" style="padding: 0.5rem;">
                                             <option value="">Semua Desa/Kel</option>
+                                            @foreach($desa_kel as $dk)
+                                                <option value="{{ $dk->id }}" @selected(request('desa_kel') == $dk->id)>{{ $dk->nama_desa_kel }}</option>
+                                            @endforeach
                                         </select>
                                     </div>
                                     <div class="col-md-3 mb-3 mb-md-0">
                                         <div class="input-group shadow-sm rounded">
-                                            <input type="text" name="search" id="search" class="form-control border-0" placeholder="Cari nama peternak..." style="padding: 1.4rem 1rem;">
+                                            <input type="text" name="search" id="search" class="form-control border-0" placeholder="Cari nama peternak..." style="padding: 1.4rem 1rem;" value="{{ request('search') }}">
                                         </div>
                                     </div>
                                     <div class="col-md-1 mb-3 mb-md-0">
@@ -245,6 +219,43 @@
                             <div class="card-body table-responsive p-0">
                             <table class="table table-modern text-nowrap align-middle">
                                 <thead>
+                                @if($isKelahiran)
+                                <tr>
+                                    <th rowspan="2" style="vertical-align:middle;">No.</th>
+                                    <th rowspan="2" style="vertical-align:middle;">Tanggal</th>
+                                    <th rowspan="2" style="vertical-align:middle;">Peternak</th>
+                                    <th rowspan="2" style="vertical-align:middle;">NIK</th>
+                                    <th rowspan="2" style="vertical-align:middle; border-right:1px solid;">Desa/Kelurahan</th>
+                                    <th colspan="2" style="text-align:center">Sapi</th>
+                                    <th colspan="2" style="text-align:center">Kerbau</th>
+                                    <th colspan="2" style="text-align:center">Kuda</th>
+                                    <th colspan="2" style="text-align:center">Kambing</th>
+                                    <th colspan="2" style="text-align:center">Babi</th>
+                                    <th colspan="2" style="text-align:center; border-right:1px solid;">Domba</th>
+                                    <th rowspan="2" style="vertical-align:middle;">Ayam Ras</th>
+                                    <th rowspan="2" style="vertical-align:middle;">Ayam Buras</th>
+                                    <th rowspan="2" style="vertical-align:middle;">Ayam Layer</th>
+                                    <th rowspan="2" style="vertical-align:middle;">Itik</th>
+                                    <th rowspan="2" style="vertical-align:middle;">Puyuh</th>
+                                    @if(Auth::user()->user_type == "C")
+                                    <th rowspan="2" style="vertical-align:middle;">Aksi</th>
+                                    @endif
+                                </tr>
+                                <tr>
+                                    <th>Jantan</th>
+                                    <th>Betina</th>
+                                    <th>Jantan</th>
+                                    <th>Betina</th>
+                                    <th>Jantan</th>
+                                    <th>Betina</th>
+                                    <th>Jantan</th>
+                                    <th>Betina</th>
+                                    <th>Jantan</th>
+                                    <th>Betina</th>
+                                    <th>Jantan</th>
+                                    <th style="border-right:1px solid;">Betina</th>
+                                </tr>
+                                @else
                                 <tr>
                                     <th rowspan="2" style="vertical-align:middle;">No.</th>
                                     <th rowspan="2" style="vertical-align:middle;">Tanggal</th>
@@ -269,7 +280,7 @@
                                     <th rowspan="2" style="vertical-align:middle;">Itik</th>
                                     <th rowspan="2" style="vertical-align:middle;">Puyuh</th>
                                     @if(Auth::user()->user_type == "C")
-                                    <th rowspan="3" style="vertical-align:middle;">Aksi</th>
+                                    <th rowspan="2" style="vertical-align:middle;">Aksi</th>
                                     @endif
                                 </tr>
                                 <tr>
@@ -310,6 +321,7 @@
                                     <th>Muda</th>
                                     <th style="border-right:1px solid;">Dewasa</th>
                                 </tr>
+                                @endif
                                 </thead>
                                 <tbody>
                                     @foreach($mutasi as $t)
@@ -345,6 +357,20 @@
                                                         @endif
                                                     @endforeach
                                                 </td>
+                                                @if($isKelahiran)
+                                                <td style="text-align:center">{{ $t->sapi_anak_jantan }}</td>
+                                                <td style="text-align:center">{{ $t->sapi_anak_betina }}</td>
+                                                <td style="text-align:center">{{ $t->kerbau_anak_jantan }}</td>
+                                                <td style="text-align:center">{{ $t->kerbau_anak_betina }}</td>
+                                                <td style="text-align:center">{{ $t->kuda_anak_jantan }}</td>
+                                                <td style="text-align:center">{{ $t->kuda_anak_betina }}</td>
+                                                <td style="text-align:center">{{ $t->kambing_anak_jantan }}</td>
+                                                <td style="text-align:center">{{ $t->kambing_anak_betina }}</td>
+                                                <td style="text-align:center">{{ $t->babi_anak_jantan }}</td>
+                                                <td style="text-align:center">{{ $t->babi_anak_betina }}</td>
+                                                <td style="text-align:center">{{ $t->domba_anak_jantan }}</td>
+                                                <td style="text-align:center; border-right:1px solid;">{{ $t->domba_anak_betina }}</td>
+                                                @else
                                                 <td style="text-align:center">{{ $t->sapi_anak_jantan }}</td>
                                                 <td style="text-align:center">{{ $t->sapi_muda_jantan }}</td>
                                                 <td style="text-align:center; border-right:1px solid;">{{ $t->sapi_dewasa_jantan }}</td>
@@ -381,6 +407,7 @@
                                                 <td style="text-align:center">{{ $t->domba_anak_betina }}</td>
                                                 <td style="text-align:center">{{ $t->domba_muda_betina }}</td>
                                                 <td style="text-align:center; border-right:1px solid;">{{ $t->domba_dewasa_betina }}</td>
+                                                @endif
                                                 <td style="text-align:center">{{ $t->ayam_ras + 0 }}</td>
                                                 <td style="text-align:center">{{ $t->ayam_buras + 0 }}</td>
                                                 <td style="text-align:center">{{ $t->ayam_petelur + 0 }}</td>
@@ -388,29 +415,13 @@
                                                 <td style="text-align:center">{{ $t->puyuh + 0 }}</td>
                                                 @if(Auth::user()->user_type == "C")
                                                 <td>
-                                                    @if($status_verifikasi['status_pengajuan'] == 1)
-                                                        @if($status_verifikasi['status_verifikasi'] == 0)
-                                                            <p>Menunggu verifikasi data</p>
-                                                        @elseif($status_verifikasi['status_verifikasi'] == 1)
-                                                            <p>Data sudah diverifikasi</p>
-                                                        @elseif($status_verifikasi['status_verifikasi'] == 2)
-                                                            <div class="d-flex">
-                                                                <a href="{{ url('mutasi/'.$jenis.'/edit/'.$t->id) }}" class="btn btn-sm btn-warning mr-2"><i class="fas fa-edit"></i> Edit</a>
-                                                                <form action="{{ url('mutasi/'.$jenis.'/delete/'.$t->id) }}" method="POST">
-                                                                    {{ csrf_field() }}
-                                                                    <button class="btn btn-sm btn-danger" onclick="return confirm('Apakah Anda yakin untuk menghapus data ?')"><i class="fas fa-trash-alt"></i> Hapus</button>
-                                                                </form>
-                                                            </div>
-                                                        @endif
-                                                    @else
-                                                        <div class="d-flex">
-                                                            <a href="{{ url('mutasi/'.$jenis.'/edit/'.$t->id) }}" class="btn btn-sm btn-warning mr-2"><i class="fas fa-edit"></i> Edit</a>
-                                                            <form action="{{ url('mutasi/'.$jenis.'/delete/'.$t->id) }}" method="POST">
-                                                                {{ csrf_field() }}
-                                                                <button class="btn btn-sm btn-danger" onclick="return confirm('Apakah Anda yakin untuk menghapus data ?')"><i class="fas fa-trash-alt"></i> Hapus</button>
-                                                            </form>
-                                                        </div>
-                                                    @endif
+                                                    <div class="d-flex">
+                                                        <a href="{{ url('mutasi/'.$jenis.'/edit/'.$t->id) }}" class="btn btn-sm btn-warning mr-2"><i class="fas fa-edit"></i> Edit</a>
+                                                        <form action="{{ url('mutasi/'.$jenis.'/delete/'.$t->id) }}" method="POST">
+                                                            {{ csrf_field() }}
+                                                            <button class="btn btn-sm btn-danger" onclick="return confirm('Apakah Anda yakin untuk menghapus data ?')"><i class="fas fa-trash-alt"></i> Hapus</button>
+                                                        </form>
+                                                    </div>
                                                 </td>
                                                 @endif
                                             </tr>
@@ -443,4 +454,43 @@
         </section>
     </div>
 </div>
+
+@if(Auth::user()->user_type == 'C')
+<div class="modal fade" id="modal-import-mutasi" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0">
+                <h5 class="modal-title font-weight-bold text-dark">
+                    <i class="fas fa-file-excel mr-2 text-success"></i>Import Data {{ ucfirst($jenis) }}
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form action="{{ route('mutasi.import', ['jenis' => $jenis]) }}" method="POST" enctype="multipart/form-data">
+                @csrf
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        Gunakan file `.xls` atau `.xlsx` sesuai template.
+                        <a href="{{ route('mutasi.template', ['jenis' => $jenis]) }}" class="font-weight-bold ml-1" style="text-decoration: underline;">Unduh Template Excel</a>
+                    </div>
+                    <div class="form-group">
+                        <label class="font-weight-bold text-muted small">Pilih File Excel</label>
+                        <div class="custom-file">
+                            <input type="file" class="custom-file-input" name="file" id="mutasiFile" required accept=".xls,.xlsx">
+                            <label class="custom-file-label" for="mutasiFile">Pilih file</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light" data-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary" style="background-color: #1e3a5f; border-color: #1e3a5f;">
+                        <i class="fas fa-upload mr-1"></i> Import
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endif
 @endsection

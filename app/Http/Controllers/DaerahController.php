@@ -6,45 +6,49 @@ namespace App\Http\Controllers;
 use App\Models\Desa_kelurahan;
 use App\Models\Kecamatan;
 use App\Models\Peternak;
+use Illuminate\Http\Request;
 
 class DaerahController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $data = $_POST['data'];
-        $id = $_POST['id'];
+        $data = $request->input('data');
+        $id = $request->input('id');
 
         if($data == "kecamatan"){
-            echo('<select name="kecamatan" id="kecamatan">
-                <option value="">Pilih Kecamatan</option>
-            ');
-
             $daerah = Kecamatan::where('kab_kota_id', $id)->get();
+            $options = '<option value="">Pilih Kecamatan</option>';
 
             foreach($daerah as $d){
-                echo('<option value="'.$d->id.'">'.$d->nama_kecamatan.'</option>');
+                $options .= '<option value="'.$d->id.'">'.$d->nama_kecamatan.'</option>';
             }
-            echo('</select>');
+
+            return response($options);
         }else if($data == "desa_kel"){
-            echo('<select name="desa_kel" id="desa_kel">
-                <option value="">Pilih Desa/Kelurahan</option>
-            ');
-
             $daerah = Desa_kelurahan::where('kecamatan_id', $id)->get();
+            $options = '<option value="">Pilih Desa/Kelurahan</option>';
 
             foreach($daerah as $d){
-                echo('<option value="'.$d->id.'">'.$d->nama_desa_kel.'</option>');
+                $options .= '<option value="'.$d->id.'">'.$d->nama_desa_kel.'</option>';
             }
-            echo('</select>');
+
+            return response($options);
         }else if($data == "lokasi"){
             $peternak = Peternak::where('id', $id)->first();
-            echo('<select name="desa_kel" id="desa_kel">
-                <option value="">Pilih Desa/Kelurahan</option>
-            ');
-            foreach($peternak as $d){
-                echo('<option value="'.$d->id.'">'.$d->nama_desa_kel.'</option>');
+
+            if (! $peternak) {
+                return response('');
             }
-            echo('</select>');
+
+            $lokasi = Desa_kelurahan::find($peternak->desa_kel_id);
+
+            if (! $lokasi) {
+                return response('');
+            }
+
+            return response('<div class="alert alert-info mb-0">Lokasi peternak: '.$lokasi->nama_desa_kel.'</div>');
         }
+
+        return response('');
     }
 }

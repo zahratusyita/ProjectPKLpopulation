@@ -4,10 +4,10 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 
-class DatabaseSeeder extends Seeder
+class LegacyDemoSeeder extends Seeder
 {
     /**
-     * Seed the application's database.
+     * Keep a dedicated entry point for demo data.
      */
     public function run(): void
     {

@@ -31,13 +31,13 @@
                                     <div class="col-sm-6">
                                         <div class="form-group">
                                             <label for="nik">NIK</label>
-                                            <input type="text" class="form-control" name="nik" id="nik" value="{{ $peternak->nik }}" required>
+                                            <input type="text" inputmode="numeric" class="form-control" name="nik" id="nik" value="{{ old('nik', $peternak->nik) }}" required>
                                         </div>
                                     </div>
                                     <div class="col-sm-6">
                                         <div class="form-group">
                                             <label for="nama">Nama</label>
-                                            <input type="text" class="form-control" name="nama" id="nama" value="{{ $peternak->nama }}" required>
+                                            <input type="text" class="form-control" name="nama" id="nama" value="{{ old('nama', $peternak->nama) }}" required>
                                         </div>
                                     </div>
                                 </div>
@@ -45,14 +45,14 @@
                                     <div class="col-sm-4">
                                         <div class="form-group">
                                             <label for="tempat_lahir">Tempat Lahir</label>
-                                            <input type="text" class="form-control" name="tempat_lahir" id="tempat_lahir" value="{{ $peternak->tempat_lahir }}" required>
+                                            <input type="text" class="form-control" name="tempat_lahir" id="tempat_lahir" value="{{ old('tempat_lahir', $peternak->tempat_lahir) }}" required>
                                         </div>
                                     </div>
                                     <div class="col-sm-4">
                                         <div class="form-group">
                                             <label for="tanggal_lahir">Tanggal Lahir</label>
                                             <div class="input-group date">
-                                                <input type="date" class="form-control" name="tanggal_lahir" value="{{ $peternak->tanggal_lahir }}" required>
+                                                <input type="date" class="form-control" name="tanggal_lahir" value="{{ old('tanggal_lahir', $peternak->tanggal_lahir) }}" required>
                                             </div>
                                         </div>
                                     </div>
@@ -61,8 +61,8 @@
                                         <label for="jenis_kelamin">Jenis Kelamin</label>
                                         <select name="jenis_kelamin" id="jenis_kelamin" class="form-control" required>
                                             <option value="">Pilih Jenis Kelamin</option>
-                                            <option value="1" @if($peternak->jenis_kelamin == 1) selected @endif>Laki-laki</option>
-                                            <option value="2" @if($peternak->jenis_kelamin == 2) selected @endif>Perempuan</option>
+                                            <option value="1" @selected(old('jenis_kelamin', $peternak->jenis_kelamin) == 1)>Laki-laki</option>
+                                            <option value="2" @selected(old('jenis_kelamin', $peternak->jenis_kelamin) == 2)>Perempuan</option>
                                         </select>
                                         </div>
                                     </div>
@@ -74,7 +74,7 @@
                                             <select name="kab_kota" id="kab_kota_" class="form-control" required>
                                                 <option value="">Pilih Kabupaten/Kota</option>
                                                 @foreach($kab_kota as $kk)
-                                                <option value="{{$kk->id}}" @if($peternak->kab_kota_id == $kk->id) selected @endif>{{$kk->nama_kab_kota}}</option>
+                                                <option value="{{$kk->id}}" @selected(old('kab_kota', $peternak->kab_kota_id) == $kk->id)>{{$kk->nama_kab_kota}}</option>
                                                 @endforeach
                                             </select>
                                         </div>
@@ -85,7 +85,7 @@
                                             <select name="kecamatan" id="kecamatan_" class="form-control" required>
                                                 <option value="">Pilih Kecamatan</option>
                                                 @foreach($kecamatan as $kc)
-                                                <option value="{{ $kc->id }}" @if($peternak->kecamatan_id == $kc->id) selected @endif>{{ $kc->nama_kecamatan }}</option>
+                                                <option value="{{ $kc->id }}" @selected(old('kecamatan', $peternak->kecamatan_id) == $kc->id)>{{ $kc->nama_kecamatan }}</option>
                                                 @endforeach
                                             </select>
                                         </div>
@@ -96,7 +96,7 @@
                                             <select name="desa_kel" id="desa_kel_" class="form-control" required>
                                                 <option value="">Pilih Desa/Kelurahan</option>
                                                 @foreach($desa_kel as $dk)
-                                                <option value="{{ $dk->id }}" @if($peternak->desa_kel_id == $dk->id) selected @endif>{{ $dk->nama_desa_kel }}</option>
+                                                <option value="{{ $dk->id }}" @selected(old('desa_kel', $peternak->desa_kel_id) == $dk->id)>{{ $dk->nama_desa_kel }}</option>
                                                 @endforeach
                                             </select>
                                         </div>
@@ -104,29 +104,30 @@
                                 </div>
                                 <div class="form-group">
                                     <label for="alamat">Alamat</label>
-                                    <textarea name="alamat" id="alamat" class="form-control" required>{{ $peternak->alamat }}</textarea>
+                                    <textarea name="alamat" id="alamat" class="form-control" rows="3" required>{{ old('alamat', $peternak->alamat) }}</textarea>
                                 </div>
                                 <div class="form-group">
                                     <label for="hp">Nomor Hp</label>
-                                    <input type="number" class="form-control" name="hp" id="hp" placeholder="Hp" value="{{ $peternak->hp }}" required>
+                                    <input type="text" inputmode="tel" class="form-control" name="hp" id="hp" placeholder="Hp" value="{{ old('hp', $peternak->hp) }}" required>
                                 </div>
                                 <div class="form-group">
                                     <label for="pekerjaan">Pekerjaan</label>
                                     <select name="pekerjaan" id="pekerjaan" class="form-control" required>
                                         <option value="">Pilih Pekerjaan</option>
-                                        <option value="1" @if($peternak->pekerjaan == 1) selected @endif>ASN/TNI/POLRI</option>
-                                        <option value="2" @if($peternak->pekerjaan == 2) selected @endif>Peternak</option>
-                                        <option value="3" @if($peternak->pekerjaan == 3) selected @endif>Petani</option>
-                                        <option value="4" @if($peternak->pekerjaan == 4) selected @endif>Swasta</option>
-                                        <option value="5" @if($peternak->pekerjaan == 5) selected @endif>Wiraswasta</option>
-                                        <option value="6" @if($peternak->pekerjaan == 6) selected @endif>Pensiunan ASN/TNI/POLRI</option>
-                                        <option value="7" @if($peternak->pekerjaan == 7) selected @endif>Tidak Bekerja</option>
+                                        <option value="1" @selected(old('pekerjaan', $peternak->pekerjaan) == 1)>ASN/TNI/POLRI</option>
+                                        <option value="2" @selected(old('pekerjaan', $peternak->pekerjaan) == 2)>Peternak</option>
+                                        <option value="3" @selected(old('pekerjaan', $peternak->pekerjaan) == 3)>Petani</option>
+                                        <option value="4" @selected(old('pekerjaan', $peternak->pekerjaan) == 4)>Swasta</option>
+                                        <option value="5" @selected(old('pekerjaan', $peternak->pekerjaan) == 5)>Wiraswasta</option>
+                                        <option value="6" @selected(old('pekerjaan', $peternak->pekerjaan) == 6)>Pensiunan ASN/TNI/POLRI</option>
+                                        <option value="7" @selected(old('pekerjaan', $peternak->pekerjaan) == 7)>Tidak Bekerja</option>
                                     </select>
                                 </div>
                             </div>
                             <!-- /.card-body -->
 
-                            <div class="card-footer">
+                            <div class="card-footer d-flex justify-content-between flex-wrap" style="gap: 0.75rem;">
+                            <a href="{{ route('peternak') }}" class="btn btn-secondary">Batalkan</a>
                             <button type="submit" class="btn btn-primary">Submit</button>
                             </div>
                         </form>

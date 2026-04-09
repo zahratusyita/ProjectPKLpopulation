@@ -9,6 +9,8 @@ use App\Models\Kecamatan;
 use App\Models\Peternak;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Maatwebsite\Excel\Facades\Excel;
 
 class PeternakController extends Controller
@@ -47,23 +49,16 @@ class PeternakController extends Controller
      */
     public function create()
     {
-        $user_type = Auth::user()->user_type;
+        $selectedKabKota = old('kab_kota');
+        $selectedKecamatan = old('kecamatan');
 
-        if($user_type == "A"){
-            $kab_kota = Kabupaten_kota::all();  
-            return view('admin.peternak.form_peternak', ['kab_kota' => $kab_kota]);
-        }elseif($user_type == "B"){
-            $user_kab_kota = Auth::user()->kab_kota_id;
-            $kab_kota = Kabupaten_kota::where('id', $user_kab_kota)->get();
-            $kecamatan = Kecamatan::where('kab_kota_id', $user_kab_kota)->get();
-            return view('admin.peternak.form_peternak', ['kab_kota' => $kab_kota, 'kecamatan' => $kecamatan]);
-        }elseif($user_type == "C"){
-            $user_kab_kota = Auth::user()->kab_kota_id;
-            $user_kecamatan = Auth::user()->kecamatan_id;
-            $kab_kota = Kabupaten_kota::where('id', $user_kab_kota)->get();
-            $kecamatan = Kecamatan::where('id', $user_kecamatan)->get();
-            return view('admin.peternak.form_peternak', ['kab_kota' => $kab_kota, 'kecamatan' => $kecamatan]);
-        }
+        [$kab_kota, $kecamatan, $desa_kel] = $this->formRegionOptions($selectedKabKota, $selectedKecamatan);
+
+        return view('admin.peternak.form_peternak', [
+            'kab_kota' => $kab_kota,
+            'kecamatan' => $kecamatan,
+            'desa_kel' => $desa_kel,
+        ]);
     }
 
     /**
@@ -72,35 +67,11 @@ class PeternakController extends Controller
     public function store(Request $request)
     {
         try{
-            $validated = $request->validate([
-                'nik'               => 'required',
-                'nama'              => "required|regex:/^[a-zA-Z0-9.'\s]+$/",
-                'tempat_lahir'      => "required|regex:/^[a-zA-Z0-9.'\s]+$/",
-                'tanggal_lahir'     => 'required|date',
-                'jenis_kelamin'     => 'required',
-                'kab_kota'          => 'required',
-                'kecamatan'         => 'required',
-                'desa_kel'          => 'required',
-                'alamat'            => "required|regex:/^[a-zA-Z0-9.'\s]+$/",
-                'hp'                => 'required|numeric',
-                'pekerjaan'         => 'required'
-            ]);
+            $validated = $this->validatedPeternakData($request);
 
-            Peternak::create([
-                'nik'               => $request->nik,
-                'nama'              => $request->nama,
-                'tempat_lahir'      => $request->tempat_lahir,
-                'tanggal_lahir'     => $request->tanggal_lahir,
-                'jenis_kelamin'     => $request->jenis_kelamin,
-                'kab_kota_id'       => $request->kab_kota,
-                'kecamatan_id'      => $request->kecamatan,
-                'desa_kel_id'       => $request->desa_kel,
-                'alamat'            => $request->alamat,
-                'hp'                => $request->hp,
-                'pekerjaan'         => $request->pekerjaan
-            ]);
+            Peternak::create($validated);
 
-            return redirect('peternak');
+            return redirect('peternak')->with('success', 'Data peternak berhasil ditambahkan.');
         }catch(\Illuminate\Database\QueryException $e){
             if($e->getCode() == 23000){
                 return redirect()->back()->withErrors(['primary_key' => 'NIK sudah ada.']);
@@ -122,12 +93,11 @@ class PeternakController extends Controller
      */
     public function edit(string $id)
     {
-        $user_kab_kota = Auth::user()->kab_kota_id;
-        $user_kecamatan = Auth::user()->kecamatan_id;
-        $peternak = Peternak::find($id);
-        $kab_kota = Kabupaten_kota::where('id', $user_kab_kota)->get();
-        $kecamatan = Kecamatan::where('id', $user_kecamatan)->get();
-        $desa_kel = Desa_kelurahan::where('kecamatan_id', $user_kecamatan)->get();
+        $peternak = $this->findPeternakForUser($id);
+        $selectedKabKota = old('kab_kota', $peternak->kab_kota_id);
+        $selectedKecamatan = old('kecamatan', $peternak->kecamatan_id);
+        [$kab_kota, $kecamatan, $desa_kel] = $this->formRegionOptions($selectedKabKota, $selectedKecamatan);
+
         return view(
             'admin.peternak.edit_peternak', [
                 'peternak'=>$peternak,
@@ -143,38 +113,11 @@ class PeternakController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        $validated = $request->validate([
-            'nik'               => 'required',
-            'nama'              => "required|regex:/^[a-zA-Z0-9.'\s]+$/",
-            'tempat_lahir'      => "required|regex:/^[a-zA-Z0-9.'\s]+$/",
-            'tanggal_lahir'     => 'required|date',
-            'jenis_kelamin'     => 'required',
-            'kab_kota'          => 'required',
-            'kecamatan'         => 'required',
-            'desa_kel'          => 'required',
-            'alamat'            => "required|regex:/^[a-zA-Z0-9.'\s]+$/",
-            'hp'                => 'required|numeric',
-            'pekerjaan'         => 'required'
-        ]);
+        $peternak = $this->findPeternakForUser($id);
+        $validated = $this->validatedPeternakData($request, $peternak);
+        $peternak->update($validated);
 
-        $peternak = Peternak::find($id);
-
-        $peternak->nik               = $request->nik;
-        $peternak->nama              = $request->nama;
-        $peternak->tempat_lahir      = $request->tempat_lahir;
-        $peternak->tanggal_lahir     = $request->tanggal_lahir;
-        $peternak->jenis_kelamin     = $request->jenis_kelamin;
-        $peternak->kab_kota_id       = $request->kab_kota;
-        $peternak->kecamatan_id      = $request->kecamatan;
-        $peternak->desa_kel_id       = $request->desa_kel;
-        $peternak->alamat            = $request->alamat;
-        $peternak->hp                = $request->hp;
-        $peternak->pekerjaan         = $request->pekerjaan;
-
-        $peternak->update($request->all());
-        $peternak->save();
-
-        return redirect('peternak');
+        return redirect('peternak')->with('success', 'Data peternak berhasil diperbarui.');
     }
 
     /**
@@ -182,10 +125,10 @@ class PeternakController extends Controller
      */
     public function destroy(string $id)
     {
-        $peternak = Peternak::find($id);
+        $peternak = $this->findPeternakForUser($id);
         $peternak->delete();
 
-        return redirect('peternak');
+        return redirect('peternak')->with('success', 'Data peternak berhasil dihapus.');
     }
 
     public function search(Request $request)
@@ -201,13 +144,13 @@ class PeternakController extends Controller
         $ft_desa_kel = $request->desa_kel;
         if($user_type == 'A'){
             $peternak = Peternak::whereNotNull('id');
-            if(isset($ft_kab_kota)){
+            if(!empty($ft_kab_kota)){
                 $peternak = Peternak::where('kab_kota_id', $ft_kab_kota);
             }
-            if(isset($ft_kecamatan)){
+            if(!empty($ft_kecamatan)){
                 $peternak->where('kecamatan_id', $ft_kecamatan);
             }
-            if(isset($ft_desa_kel)){
+            if(!empty($ft_desa_kel)){
                 $peternak->where('desa_kel_id', $ft_desa_kel);
             }
 
@@ -216,10 +159,10 @@ class PeternakController extends Controller
             $desa_kel = Desa_kelurahan::all();
         }elseif($user_type == 'B'){
             $peternak = Peternak::where('kab_kota_id', $user_kab_kota);
-            if(isset($ft_kecamatan)){
+            if(!empty($ft_kecamatan)){
                 $peternak->where('kecamatan_id', $ft_kecamatan);
             }
-            if(isset($ft_desa_kel)){
+            if(!empty($ft_desa_kel)){
                 $peternak->where('desa_kel_id', $ft_desa_kel);
             }
 
@@ -229,7 +172,7 @@ class PeternakController extends Controller
         }elseif($user_type == 'C'){
             $peternak = Peternak::where('kab_kota_id', $user_kab_kota)
                 ->where('kecamatan_id', $user_kecamatan);
-            if(isset($ft_desa_kel)){
+            if(!empty($ft_desa_kel)){
                 $peternak->where('desa_kel_id', $ft_desa_kel);
             }
 
@@ -238,7 +181,7 @@ class PeternakController extends Controller
             $desa_kel = Desa_kelurahan::where('kecamatan_id', $user_kecamatan)->get();
         }
 
-        if(isset($search)){
+        if(!empty($search)){
             $peternak->where('nama', 'like', "%".$search."%");
         }
 
@@ -263,26 +206,29 @@ class PeternakController extends Controller
         $ft_desa_kel = $request->desa_kel;
         if($user_type == 'A'){
             $peternak = Peternak::whereNotNull('id');
-            if(isset($ft_kab_kota)){
+            if(!empty($ft_kab_kota)){
                 $peternak->where('kab_kota_id', $ft_kab_kota);
             }
-            if(isset($ft_kecamatan)){
+            if(!empty($ft_kecamatan)){
                 $peternak->where('kecamatan_id', $ft_kecamatan);
             }
-            if(isset($ft_desa_kel)){
+            if(!empty($ft_desa_kel)){
                 $peternak->where('desa_kel_id', $ft_desa_kel);
             }
 
             $kab_kota = Kabupaten_kota::all();
             $kecamatan = Kecamatan::all();
             $desa_kel = Desa_kelurahan::all();
+            $ft_kab_kota_nama = optional(Kabupaten_kota::find($ft_kab_kota))->nama_kab_kota;
+            $ft_kecamatan_nama = optional(Kecamatan::find($ft_kecamatan))->nama_kecamatan;
+            $ft_desa_kel_nama = optional(Desa_kelurahan::find($ft_desa_kel))->nama_desa_kel;
         }elseif($user_type == 'B'){
             $user_kab_kota = Auth::user()->kab_kota_id;
             $peternak = Peternak::where('kab_kota_id', $user_kab_kota);
-            if(isset($ft_kecamatan)){
+            if(!empty($ft_kecamatan)){
                 $peternak->where('kecamatan_id', $ft_kecamatan);
             }
-            if(isset($ft_desa_kel)){
+            if(!empty($ft_desa_kel)){
                 $peternak->where('desa_kel_id', $ft_desa_kel);
             }
 
@@ -301,7 +247,7 @@ class PeternakController extends Controller
             $user_kecamatan = Auth::user()->kecamatan_id;
             $peternak = Peternak::where('kab_kota_id', $user_kab_kota)
                 ->where('kecamatan_id', $user_kecamatan);
-            if(isset($ft_desa_kel)){
+            if(!empty($ft_desa_kel)){
                 $peternak->where('desa_kel_id', $ft_desa_kel);
             }
 
@@ -324,7 +270,7 @@ class PeternakController extends Controller
             }
         }
 
-        if(isset($search)){
+        if(!empty($search)){
             $peternak->where('nama', 'like', "%".$search."%");
         }
 
@@ -333,14 +279,14 @@ class PeternakController extends Controller
         echo '<center><h1>Data Peternak</h1></center>';
         echo 'Provinsi: Nusa Tenggara Barat<br>';
         if($user_type == "A"){
-            if(isset($ft_kab_kota)){
+            if(!empty($ft_kab_kota)){
                 echo 'Kabupaten/Kota: '.$ft_kab_kota_nama.'<br>';
             }
-            if(isset($ft_kecamatan)){
+            if(!empty($ft_kecamatan)){
                 echo 'Kecamatan: '.$ft_kecamatan_nama.'<br>';
             }
-            if(isset($ft_desa_kel)){
-                echo 'Desa/Kelurahan: '.$ft_desa_kel.'<br>';
+            if(!empty($ft_desa_kel)){
+                echo 'Desa/Kelurahan: '.$ft_desa_kel_nama.'<br>';
             }
         }elseif($user_type == "B"){
             echo 'Kabupaten/Kota: '.$user_kab_kota_nama.'<br>';
@@ -463,5 +409,115 @@ class PeternakController extends Controller
             // return redirect()->back()->withErrors(['error' => 'Terjadi kesalahan saat menyimpan data']);
             return $e;
         }
-    }    
+    }
+
+    private function validatedPeternakData(Request $request, ?Peternak $peternak = null): array
+    {
+        $normalizedNik = preg_replace('/\D+/', '', (string) $request->input('nik'));
+        $normalizedHp = preg_replace('/\D+/', '', (string) $request->input('hp'));
+        $request->merge([
+            'nik' => $normalizedNik,
+            'hp' => $normalizedHp,
+        ]);
+
+        $validated = $request->validate([
+            'nik' => ['required', 'digits_between:15,17', Rule::unique('peternaks', 'nik')->ignore($peternak?->id)],
+            'nama' => ['required', 'string', 'max:50', "regex:/^[a-zA-Z0-9.,'\\-\\s]+$/"],
+            'tempat_lahir' => ['required', 'string', 'max:100', "regex:/^[a-zA-Z0-9.,'\\-\\s]+$/"],
+            'tanggal_lahir' => 'required|date',
+            'jenis_kelamin' => ['required', Rule::in(['1', '2', 1, 2])],
+            'kab_kota' => ['required', 'integer', 'exists:kabupaten_kotas,id'],
+            'kecamatan' => ['required', 'integer', 'exists:kecamatans,id'],
+            'desa_kel' => ['required', 'integer', 'exists:desa_kelurahans,id'],
+            'alamat' => 'required|string|max:255',
+            'hp' => ['required', 'digits_between:10,13'],
+            'pekerjaan' => ['required', Rule::in(['1', '2', '3', '4', '5', '6', '7', 1, 2, 3, 4, 5, 6, 7])],
+        ]);
+
+        $this->ensureRegionAccess((int) $validated['kab_kota'], (int) $validated['kecamatan'], (int) $validated['desa_kel']);
+
+        return [
+            'nik' => trim((string) $validated['nik']),
+            'nama' => trim((string) $validated['nama']),
+            'tempat_lahir' => trim((string) $validated['tempat_lahir']),
+            'tanggal_lahir' => $validated['tanggal_lahir'],
+            'jenis_kelamin' => (int) $validated['jenis_kelamin'],
+            'kab_kota_id' => (int) $validated['kab_kota'],
+            'kecamatan_id' => (int) $validated['kecamatan'],
+            'desa_kel_id' => (int) $validated['desa_kel'],
+            'alamat' => trim((string) $validated['alamat']),
+            'hp' => trim((string) $validated['hp']),
+            'pekerjaan' => (int) $validated['pekerjaan'],
+        ];
+    }
+
+    private function formRegionOptions(?int $selectedKabKota = null, ?int $selectedKecamatan = null): array
+    {
+        $user = Auth::user();
+        $kabupaten = Kabupaten_kota::query();
+        $kecamatan = Kecamatan::query();
+
+        if ($user->user_type === 'A') {
+            $kabupaten = $kabupaten->get();
+            $kecamatan = $selectedKabKota
+                ? $kecamatan->where('kab_kota_id', $selectedKabKota)->get()
+                : collect();
+        } elseif ($user->user_type === 'B') {
+            $selectedKabKota = $user->kab_kota_id;
+            $kabupaten = $kabupaten->where('id', $user->kab_kota_id)->get();
+            $kecamatan = Kecamatan::where('kab_kota_id', $user->kab_kota_id)->get();
+        } else {
+            $selectedKabKota = $user->kab_kota_id;
+            $selectedKecamatan = $user->kecamatan_id;
+            $kabupaten = $kabupaten->where('id', $user->kab_kota_id)->get();
+            $kecamatan = Kecamatan::where('id', $user->kecamatan_id)->get();
+        }
+
+        $desaKel = $selectedKecamatan
+            ? Desa_kelurahan::where('kecamatan_id', $selectedKecamatan)->get()
+            : collect();
+
+        return [$kabupaten, $kecamatan, $desaKel];
+    }
+
+    private function findPeternakForUser(string $id): Peternak
+    {
+        $query = Peternak::query();
+        $user = Auth::user();
+
+        if ($user->user_type === 'B') {
+            $query->where('kab_kota_id', $user->kab_kota_id);
+        } elseif ($user->user_type === 'C') {
+            $query->where('kecamatan_id', $user->kecamatan_id);
+        }
+
+        return $query->findOrFail($id);
+    }
+
+    private function ensureRegionAccess(int $kabKotaId, int $kecamatanId, int $desaKelId): void
+    {
+        $kecamatan = Kecamatan::where('id', $kecamatanId)
+            ->where('kab_kota_id', $kabKotaId)
+            ->first();
+
+        $desaKel = Desa_kelurahan::where('id', $desaKelId)
+            ->where('kecamatan_id', $kecamatanId)
+            ->first();
+
+        if (! $kecamatan || ! $desaKel) {
+            throw ValidationException::withMessages([
+                'desa_kel' => 'Wilayah yang dipilih tidak valid.',
+            ]);
+        }
+
+        $user = Auth::user();
+
+        if ($user->user_type === 'B' && (int) $user->kab_kota_id !== $kabKotaId) {
+            abort(403);
+        }
+
+        if ($user->user_type === 'C' && ((int) $user->kab_kota_id !== $kabKotaId || (int) $user->kecamatan_id !== $kecamatanId)) {
+            abort(403);
+        }
+    }
 }

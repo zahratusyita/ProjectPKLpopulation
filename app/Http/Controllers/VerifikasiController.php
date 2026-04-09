@@ -129,6 +129,29 @@ class VerifikasiController extends Controller
         }
     }
 
+    public function cancel(string $id)
+    {
+        if (Auth::user()->user_type !== 'C') {
+            abort(403);
+        }
+
+        $verifikasi = Verifikasi::findOrFail($id);
+
+        if (
+            $verifikasi->data_type !== 'C' ||
+            (int) $verifikasi->daerah !== (int) Auth::user()->kecamatan_id ||
+            (string) $verifikasi->tahun !== (string) session()->get('tahun_data') ||
+            ! $verifikasi->status_pengajuan ||
+            $verifikasi->status_verifikasi !== null
+        ) {
+            abort(403);
+        }
+
+        $verifikasi->delete();
+
+        return back()->with('success', 'Pengajuan data dibatalkan. Anda dapat melanjutkan perubahan data.');
+    }
+
     /**
      * Remove the specified resource from storage.
      */

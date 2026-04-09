@@ -56,7 +56,8 @@ class MutasiTernak extends Model
         'ayam_petelur',
         'itik',
         'puyuh',
-        'keterangan'
+        'keterangan',
+        'applied_to_ternak',
     ];
 
     public function Peternak(){

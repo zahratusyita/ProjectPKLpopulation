@@ -63,12 +63,16 @@ Route::post('/ternak/import', [TernakController::class, 'import'])->middleware('
 Route::get('/verifikasi', [VerifikasiController::class, 'index'])->middleware('auth')->name('verifikasi');
 Route::get('/ajukan', [VerifikasiController::class, 'store'])->middleware('auth')->name('ajukan');
 Route::post('/verifikasi/update/{id}', [VerifikasiController::class, 'update'])->middleware('auth')->name('verifikasi.update');
+Route::post('/verifikasi/cancel/{id}', [VerifikasiController::class, 'cancel'])->middleware('auth')->name('verifikasi.cancel');
 Route::get('/verifikasi/search', [VerifikasiController::class, 'search'])->middleware('auth')->name('verifikasi.search');
 Route::get('/panduan', [HomeController::class, 'panduan'])->middleware('auth')->name('panduan');
 
 // Mutasi Ternak Routes
 Route::get('/mutasi/{jenis}', [MutasiTernakController::class, 'index'])->middleware('auth')->name('mutasi.index');
+Route::get('/mutasi/{jenis}/template', [MutasiTernakController::class, 'template'])->middleware('auth')->name('mutasi.template');
+Route::get('/mutasi/{jenis}/export', [MutasiTernakController::class, 'export'])->middleware('auth')->name('mutasi.export');
 Route::get('/mutasi/{jenis}/form', [MutasiTernakController::class, 'create'])->middleware('auth')->name('mutasi.form');
+Route::post('/mutasi/{jenis}/import', [MutasiTernakController::class, 'import'])->middleware('auth')->name('mutasi.import');
 Route::post('/mutasi/{jenis}/store', [MutasiTernakController::class, 'store'])->middleware('auth')->name('mutasi.store');
 Route::get('/mutasi/{jenis}/edit/{id}', [MutasiTernakController::class, 'edit'])->middleware('auth')->name('mutasi.edit');
 Route::post('/mutasi/{jenis}/update/{id}', [MutasiTernakController::class, 'update'])->middleware('auth')->name('mutasi.update');

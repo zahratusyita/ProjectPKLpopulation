@@ -31,7 +31,7 @@
                                     <div class="col-sm-6">
                                         <div class="form-group">
                                             <label for="nik">NIK</label>
-                                            <input type="number" class="form-control" name="nik" id="nik" value="{{ old('nik') }}" placeholder="Enter ..." required>
+                                            <input type="text" inputmode="numeric" class="form-control" name="nik" id="nik" value="{{ old('nik') }}" placeholder="Masukkan NIK" required>
                                         </div>
                                     </div>
                                     <div class="col-sm-6">
@@ -61,8 +61,8 @@
                                         <label for="jenis_kelamin">Jenis Kelamin</label>
                                         <select name="jenis_kelamin" id="jenis_kelamin" class="form-control" required>
                                             <option value="">Pilih Jenis Kelamin</option>
-                                            <option value="1">Laki-laki</option>
-                                            <option value="2">Perempuan</option>
+                                            <option value="1" @selected(old('jenis_kelamin') == '1')>Laki-laki</option>
+                                            <option value="2" @selected(old('jenis_kelamin') == '2')>Perempuan</option>
                                         </select>
                                         </div>
                                     </div>
@@ -75,13 +75,13 @@
                                                 <select name="kab_kota" id="kab_kota" class="form-control" required>
                                                     <option value="">Pilih Kabupaten/Kota</option>
                                                     @foreach($kab_kota as $kk)
-                                                    <option value="{{$kk->id}}">{{$kk->nama_kab_kota}}</option>
+                                                    <option value="{{$kk->id}}" @selected(old('kab_kota') == $kk->id)>{{$kk->nama_kab_kota}}</option>
                                                     @endforeach
                                                 </select>
                                             @elseif(Auth::user()->user_type == "B" or Auth::user()->user_type == "C")
                                                 <select name="kab_kota" id="kab_kota" class="form-control" required>
                                                     @foreach($kab_kota as $kk)
-                                                    <option value="{{$kk->id}}">{{$kk->nama_kab_kota}}</option>
+                                                    <option value="{{$kk->id}}" @selected(old('kab_kota', $kk->id) == $kk->id)>{{$kk->nama_kab_kota}}</option>
                                                     @endforeach
                                                 </select>
                                             @endif
@@ -98,7 +98,7 @@
                                                 <select name="kecamatan" id="kecamatan" class="form-control" required>
                                                     <option value="">Pilih Kecamatan</option>
                                                     @foreach($kecamatan as $kc)
-                                                    <option value="{{ $kc->id }}">{{ $kc->nama_kecamatan }}</option>
+                                                    <option value="{{ $kc->id }}" @selected(old('kecamatan') == $kc->id)>{{ $kc->nama_kecamatan }}</option>
                                                     @endforeach
                                                 </select>
                                             @endif
@@ -109,35 +109,39 @@
                                             <label for="desa_kel">Desa/Kelurahan</label>
                                             <select name="desa_kel" id="desa_kel" class="form-control" required>
                                                 <option value="">Pilih Desa/Kelurahan</option>
+                                                @foreach(($desa_kel ?? collect()) as $dk)
+                                                    <option value="{{ $dk->id }}" @selected(old('desa_kel') == $dk->id)>{{ $dk->nama_desa_kel }}</option>
+                                                @endforeach
                                             </select>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="form-group">
                                     <label for="alamat">Alamat</label>
-                                    <textarea name="alamat" id="alamat" class="form-control" required>{{ old('alamat') }}</textarea>
+                                    <textarea name="alamat" id="alamat" class="form-control" rows="3" placeholder="Contoh: Jl. Raya Sekotong No. 12, RT 01/RW 02" required>{{ old('alamat') }}</textarea>
                                 </div>
                                 <div class="form-group">
                                     <label for="hp">Nomor Hp</label>
-                                    <input type="number" class="form-control" name="hp" id="hp" value="{{ old('hp') }}" placeholder="Hp" required>
+                                    <input type="text" inputmode="tel" class="form-control" name="hp" id="hp" value="{{ old('hp') }}" placeholder="08xxxxxxxxxx" required>
                                 </div>
                                 <div class="form-group">
                                     <label for="pekerjaan">Pekerjaan</label>
                                     <select name="pekerjaan" id="pekerjaan" class="form-control" required>
                                         <option value="">Pilih Pekerjaan</option>
-                                        <option value="1">ASN/TNI/POLRI</option>
-                                        <option value="2">Peternak</option>
-                                        <option value="3">Petani</option>
-                                        <option value="4">Swasta</option>
-                                        <option value="5">Wiraswasta</option>
-                                        <option value="6">Pensiunan ASN/TNI/POLRI</option>
-                                        <option value="7">Tidak Bekerja</option>
+                                        <option value="1" @selected(old('pekerjaan') == '1')>ASN/TNI/POLRI</option>
+                                        <option value="2" @selected(old('pekerjaan') == '2')>Peternak</option>
+                                        <option value="3" @selected(old('pekerjaan') == '3')>Petani</option>
+                                        <option value="4" @selected(old('pekerjaan') == '4')>Swasta</option>
+                                        <option value="5" @selected(old('pekerjaan') == '5')>Wiraswasta</option>
+                                        <option value="6" @selected(old('pekerjaan') == '6')>Pensiunan ASN/TNI/POLRI</option>
+                                        <option value="7" @selected(old('pekerjaan') == '7')>Tidak Bekerja</option>
                                     </select>
                                 </div>
                             </div>
                             <!-- /.card-body -->
 
-                            <div class="card-footer">
+                            <div class="card-footer d-flex justify-content-between flex-wrap" style="gap: 0.75rem;">
+                            <a href="{{ route('peternak') }}" class="btn btn-secondary">Batalkan</a>
                             <button type="submit" class="btn btn-primary">Submit</button>
                             </div>
                         </form>
