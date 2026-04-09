@@ -12,90 +12,110 @@
 
     <!-- Sidebar -->
     <div class="sidebar">
-      <!-- Sidebar user panel (optional) -->
-      <div class="user-panel mt-3 pb-3 mb-3 d-flex">
-        <div class="image">
-          <img src="{{asset('assets/dist/img/user2-160x160.jpg')}}" class="img-circle elevation-2" alt="User Image">
-        </div>
-        <div class="info">
-          <a href="#" class="d-block"><small>{{ Auth::user()->name }}</small></a>
-        </div>
-      </div>
 
       <!-- Sidebar Menu -->
       <nav class="mt-2">
         <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
-          <!-- Add icons to the links using the .nav-icon class
-               with font-awesome or any other icon font library -->
+          @php
+            $isOperasionalActive = Request::routeIs('peternak*') || Request::routeIs('ternak*') || request()->is('mutasi*');
+            $isSistemActive = Request::routeIs('verifikasi') || Request::routeIs('user') || Request::routeIs('panduan');
+          @endphp
+          
+          <li class="nav-header" style="font-size: 0.75rem; text-transform: uppercase; color: #94a3b8; font-weight: 700; margin-top: 10px; padding-left: 1rem;">NAVIGATION</li>
+          
           <li class="nav-item">
             <a href="{{ route('home') }}" class="nav-link {{ Request::routeIs('home') ? 'active':'' }}">
-              <i class="nav-icon fas fa-tachometer-alt"></i>
+              <i class="nav-icon fas fa-th-large"></i>
+              <p>Dashboard</p>
+            </a>
+          </li>
+
+          <li class="nav-item {{ $isOperasionalActive ? 'menu-open' : '' }}">
+            <a href="#" class="nav-link {{ $isOperasionalActive ? 'active' : '' }}">
+              <i class="nav-icon fas fa-layer-group"></i>
               <p>
-                Dashboard
+                Operasional
+                <i class="right fas fa-angle-left"></i>
               </p>
             </a>
+            <ul class="nav nav-treeview" style="padding-left: 10px;">
+              <li class="nav-item">
+                <a href="{{ route('peternak') }}" class="nav-link {{ Request::routeIs('peternak*') ? 'active':'' }}">
+                  <i class="fas fa-users nav-icon" style="font-size: 0.85rem;"></i>
+                  <p>Data Peternak</p>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a href="{{ route('ternak') }}" class="nav-link {{ Request::routeIs('ternak*') ? 'active':'' }}">
+                  <i class="fas fa-paw nav-icon" style="font-size: 0.85rem;"></i>
+                  <p>Data Ternak</p>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a href="{{ url('mutasi/kelahiran') }}" class="nav-link {{ request()->is('mutasi/kelahiran*') ? 'active':'' }}">
+                  <i class="fas fa-baby nav-icon" style="font-size: 0.85rem;"></i>
+                  <p>Data Kelahiran</p>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a href="{{ url('mutasi/kematian') }}" class="nav-link {{ request()->is('mutasi/kematian*') ? 'active':'' }}">
+                  <i class="fas fa-skull nav-icon" style="font-size: 0.85rem;"></i>
+                  <p>Data Kematian</p>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a href="{{ url('mutasi/pemotongan') }}" class="nav-link {{ request()->is('mutasi/pemotongan*') ? 'active':'' }}">
+                  <i class="fas fa-cut nav-icon" style="font-size: 0.85rem;"></i>
+                  <p>Data Pemotongan</p>
+                </a>
+              </li>
+            </ul>
           </li>
-          <li class="nav-item">
-            <a href="{{ route('peternak') }}" class="nav-link {{ Request::routeIs('peternak') || Request::routeIs('peternak.*') ? 'active':'' }}">
-              <i class="nav-icon fas fa-chart-pie"></i>
+
+          <li class="nav-item {{ $isSistemActive ? 'menu-open' : '' }}">
+            <a href="#" class="nav-link {{ $isSistemActive ? 'active' : '' }}">
+              <i class="nav-icon fas fa-cog"></i>
               <p>
-                Peternak
+                Sistem
+                <i class="right fas fa-angle-left"></i>
               </p>
             </a>
+            <ul class="nav nav-treeview" style="padding-left: 10px;">
+              @if(Auth::user()->user_type == 'A' OR Auth::user()->user_type == 'B')
+              <li class="nav-item">
+                <a href="{{ route('verifikasi') }}" class="nav-link {{ Request::routeIs('verifikasi') ? 'active':'' }}">
+                  <i class="fas fa-check-double nav-icon" style="font-size: 0.85rem;"></i>
+                  <p>Verifikasi Data</p>
+                </a>
+              </li>
+              @endif
+              
+              @if(Auth::user()->user_type == 'A')
+              <li class="nav-item">
+                <a href="{{ route('user') }}" class="nav-link {{ Request::routeIs('user') ? 'active':'' }}">
+                  <i class="fas fa-user-cog nav-icon" style="font-size: 0.85rem;"></i>
+                  <p>Manajemen Pengguna</p>
+                </a>
+              </li>
+              @endif
+
+              <li class="nav-item">
+                <a href="{{ route('panduan') }}" class="nav-link {{ Request::routeIs('panduan') ? 'active':'' }}">
+                  <i class="fas fa-book-open nav-icon" style="font-size: 0.85rem;"></i>
+                  <p>Panduan / Bantuan</p>
+                </a>
+              </li>
+            </ul>
           </li>
-          <li class="nav-item">
-            <a href="{{ route('ternak') }}" class="nav-link {{ Request::routeIs('ternak') || Request::routeIs('ternak.*') ? 'active':'' }}">
-              <i class="nav-icon fas fa-edit"></i>
-              <p>
-                Ternak
-              </p>
+
+          <li class="nav-item mt-2 pt-2" style="border-top: 1px solid rgba(255,255,255,0.1);">
+            <a href="#" class="nav-link" onclick="event.preventDefault(); document.getElementById('sidebar-logout-form').submit();">
+              <i class="nav-icon fas fa-sign-out-alt"></i>
+              <p>Logout</p>
             </a>
-          </li>
-          <li class="nav-item">
-            <a href="{{ url('mutasi/kelahiran') }}" class="nav-link {{ request()->is('mutasi/kelahiran*') ? 'active':'' }}">
-              <i class="nav-icon fas fa-baby"></i>
-              <p>Kelahiran</p>
-            </a>
-          </li>
-          <li class="nav-item">
-            <a href="{{ url('mutasi/kematian') }}" class="nav-link {{ request()->is('mutasi/kematian*') ? 'active':'' }}">
-              <i class="nav-icon fas fa-skull"></i>
-              <p>Kematian</p>
-            </a>
-          </li>
-          <li class="nav-item">
-            <a href="{{ url('mutasi/pemotongan') }}" class="nav-link {{ request()->is('mutasi/pemotongan*') ? 'active':'' }}">
-              <i class="nav-icon fas fa-cut"></i>
-              <p>Pemotongan</p>
-            </a>
-          </li>
-          @if(Auth::user()->user_type == 'A' OR Auth::user()->user_type == 'B')
-          <li class="nav-item">
-            <a href="{{ route('verifikasi') }}" class="nav-link {{ Request::routeIs('verifikasi') ? 'active':'' }}">
-              <i class="nav-icon fas fa-check-circle"></i>
-              <p>
-                Verifikasi
-              </p>
-            </a>
-          </li>
-          @endif
-          @if(Auth::user()->user_type == 'A')
-          <li class="nav-item">
-            <a href="{{ route('user') }}" class="nav-link {{ Request::routeIs('user') ? 'active':'' }}">
-              <i class="nav-icon fas fa-user"></i>
-              <p>
-                Akun User
-              </p>
-            </a>
-          </li>
-          @endif
-          <li class="nav-item">
-            <a href="{{ route('panduan') }}" class="nav-link {{ Request::routeIs('panduan') ? 'active':'' }}">
-              <i class="nav-icon fas fa-book"></i>
-              <p>
-                Panduan
-              </p>
-            </a>
+            <form id="sidebar-logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
+                @csrf
+            </form>
           </li>
         </ul>
       </nav>

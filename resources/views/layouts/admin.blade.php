@@ -21,16 +21,50 @@
   <link rel="stylesheet" href="{{asset('assets/dist/css/adminlte.min.css')}}">
   <!-- overlayScrollbars -->
   <link rel="stylesheet" href="{{asset('assets/plugins/overlayScrollbars/css/OverlayScrollbars.min.css')}}">
-  <!-- Kabupaten/Kota/Kecamatan/Desa/Kelurahan -->
+  <!-- CSRF Token -->
   <meta name="csrf-token" content="{{ csrf_token() }}">
+  
+  <!-- Global Green Theme Overrides -->
+  <style>
+    /* Ubah warna Sidebar sesuai kode kustom warna Navy Blue */
+    .main-sidebar, .brand-link {
+        background-color: #1e3a5f !important;
+        border-right: 1px solid rgba(0,0,0,0.05) !important;
+    }
+    body:not(.layout-fixed) .main-sidebar {
+        background-color: #1e3a5f !important;
+    }
+
+    /* Pastikan teks menu tetap putih dan terbaca jelas */
+    .sidebar-dark-primary .nav-sidebar>.nav-item>.nav-link, 
+    .brand-link .brand-text,
+    .brand-link {
+        color: #ffffff !important;
+    }
+    .sidebar-dark-primary .nav-sidebar>.nav-item>.nav-link i {
+        color: rgba(255,255,255,0.9) !important;
+    }
+    .sidebar-dark-primary .nav-sidebar>.nav-item>.nav-link:hover {
+        background-color: rgba(255,255,255,0.15) !important;
+    }
+
+    /* Menu item yang aktif: Hapus efek garis, gunakan sorotan transparan */
+    .nav-pills .nav-link.active, .nav-pills .show>.nav-link {
+        background-color: rgba(255,255,255,0.2) !important;
+        color: #ffffff !important;
+        border: none !important;
+        box-shadow: none !important;
+        border-radius: 8px;
+    }
+
+    .content-wrapper {
+        background-color: #f8fafc !important; /* Soft backdrop */
+    }
+  </style>
 </head>
 <body class="hold-transition sidebar-mini layout-fixed">
 <div class="wrapper">
 
-  <!-- Preloader -->
-  <div class="preloader flex-column justify-content-center align-items-center">
-    <img class="animation__shake" src="{{asset('assets/dist/img/logo_ntb.png')}}" alt="Logo NTB" height="60" width="60">
-  </div>
 
   <!-- Navbar -->
   @include('layouts.include.navbar')
