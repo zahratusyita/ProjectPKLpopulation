@@ -27,7 +27,7 @@ class MutasiExport implements FromCollection, ShouldAutoSize, WithCustomStartCel
     ) {
     }
 
-    public function collection(): Collection
+            public function collection(): Collection
     {
         return $this->rows;
     }
@@ -65,7 +65,7 @@ class MutasiExport implements FromCollection, ShouldAutoSize, WithCustomStartCel
         ];
     }
 
-    public function registerEvents(): array
+            public function registerEvents(): array
     {
         return [
             AfterSheet::class => function (AfterSheet $event) {
@@ -88,7 +88,6 @@ class MutasiExport implements FromCollection, ShouldAutoSize, WithCustomStartCel
                 ]);
 
                 $event->sheet->setAutoFilter('A3:'.$lastColumn.'3');
-                $event->sheet->freezePane('A4');
                 $event->sheet->getStyle('A3:'.$lastColumn.$lastRow)->applyFromArray([
                     'borders' => [
                         'allBorders' => [
@@ -100,7 +99,61 @@ class MutasiExport implements FromCollection, ShouldAutoSize, WithCustomStartCel
                         'vertical' => Alignment::VERTICAL_CENTER,
                     ],
                 ]);
+                
+                // Add styling for Total row (the last row)
+                if ($this->rows->count() > 0) {
+                    $sumTotal = 0;
+                    $cols = MutasiSchema::animalColumns();
+                    foreach($this->rows as $r) {
+                        if (MutasiSchema::isKelahiran($this->jenis)) {
+                            foreach (array_keys(MutasiSchema::mamalia()) as $field) {
+                                $sumTotal += (int)($r->{$field.'_anak_jantan'} ?? 0);
+                                $sumTotal += (int)($r->{$field.'_anak_betina'} ?? 0);
+                            }
+                            foreach (array_keys(MutasiSchema::unggas()) as $field) {
+                                $sumTotal += (int)($r->{$field} ?? 0);
+                            }
+                        } else {
+                            foreach ($cols as $col) {
+                                $sumTotal += (int)($r->{$col} ?? 0);
+                            }
+                        }
+                    }
+
+                    $totalRowPos = $lastRow + 1;
+                    $event->sheet->mergeCells('A'.$totalRowPos.':F'.$totalRowPos);
+                    $event->sheet->setCellValue('A'.$totalRowPos, 'Total Keseluruhan');
+                    
+                    $startColMerge = Coordinate::stringFromColumnIndex(7);
+                    // Col 7 is G. The headings length might be slightly different.
+                    // Wait, the headings include 'keterangan' as the last column.
+                    // So we shouldn't merge all the way to $lastColumn. Or maybe we should?
+                    // Let's merge from G to one column before $lastColumn, then 'keterangan' will just be empty.
+                    // Actually, merging to $lastColumn is fine. Let's merge to $lastColumn.
+                    $event->sheet->mergeCells($startColMerge.$totalRowPos.':'.$lastColumn.$totalRowPos);
+                    $event->sheet->setCellValue($startColMerge.$totalRowPos, $sumTotal . " Ekor");
+
+                    $event->sheet->getStyle('A'.$totalRowPos.':'.$lastColumn.$totalRowPos)->applyFromArray([
+                        'font' => ['bold' => true],
+                        'fill' => [
+                            'fillType' => Fill::FILL_SOLID,
+                            'color' => ['rgb' => 'F1F5F9'],
+                        ],
+                        'alignment' => [
+                            'horizontal' => Alignment::HORIZONTAL_CENTER,
+                        ],
+                        'borders' => [
+                            'allBorders' => [
+                                'borderStyle' => Border::BORDER_THIN,
+                                'color' => ['rgb' => 'CBD5E1'],
+                            ],
+                        ],
+                    ]);
+                }
             },
         ];
     }
 }
+
+
+

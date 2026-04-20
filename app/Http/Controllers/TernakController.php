@@ -580,11 +580,11 @@ class TernakController extends Controller
         }elseif($user_type == "B"){
             $user_kab_kota = Auth::user()->kab_kota_id;
             $peternak = Peternak::where('kab_kota_id', $user_kab_kota)->get();
-            $total_ternak = TotalTernak::total_kolom_kk($now, $user_kab_kota, $peternak);
+            $total_ternak = TotalTernak::total_kolom_kk($now, $user_kab_kota, $peternak, $ft_kecamatan, $ft_desa_kel);
         }elseif($user_type == "C"){
             $user_kecamatan = Auth::user()->kecamatan_id;
             $peternak = Peternak::where('kecamatan_id', $user_kecamatan)->get();
-            $total_ternak = TotalTernak::total_kolom_kc($now, $user_kecamatan, $peternak);
+            $total_ternak = TotalTernak::total_kolom_kc($now, $user_kecamatan, $peternak, $ft_desa_kel);
         }
 
         echo '<center><h1>Data Ternak</h1></center>';
@@ -771,54 +771,8 @@ class TernakController extends Controller
                     }
                 }
                 echo '<tr>';
-                    echo '<td colspan="6">Total</td>';
-                    echo '<td style="text-align:center">'.$total_ternak['sapi_anak_jantan'].'</td>';
-                    echo '<td style="text-align:center">'.$total_ternak['sapi_muda_jantan'].'</td>';
-                    echo '<td style="text-align:center">'.$total_ternak['sapi_dewasa_jantan'].'</td>';
-                    echo '<td style="text-align:center">'.$total_ternak['sapi_anak_betina'].'</td>';
-                    echo '<td style="text-align:center">'.$total_ternak['sapi_muda_betina'].'</td>';
-                    echo '<td style="text-align:center">'.$total_ternak['sapi_dewasa_betina'].'</td>';
-
-                    echo '<td style="text-align:center">'.$total_ternak['kerbau_anak_jantan'].'</td>';
-                    echo '<td style="text-align:center">'.$total_ternak['kerbau_muda_jantan'].'</td>';
-                    echo '<td style="text-align:center">'.$total_ternak['kerbau_dewasa_jantan'].'</td>';
-                    echo '<td style="text-align:center">'.$total_ternak['kerbau_anak_betina'].'</td>';
-                    echo '<td style="text-align:center">'.$total_ternak['kerbau_muda_betina'].'</td>';
-                    echo '<td style="text-align:center">'.$total_ternak['kerbau_dewasa_betina'].'</td>';
-
-                    echo '<td style="text-align:center">'.$total_ternak['kuda_anak_jantan'].'</td>';
-                    echo '<td style="text-align:center">'.$total_ternak['kuda_muda_jantan'].'</td>';
-                    echo '<td style="text-align:center">'.$total_ternak['kuda_dewasa_jantan'].'</td>';
-                    echo '<td style="text-align:center">'.$total_ternak['kuda_anak_betina'].'</td>';
-                    echo '<td style="text-align:center">'.$total_ternak['kuda_muda_betina'].'</td>';
-                    echo '<td style="text-align:center">'.$total_ternak['kuda_dewasa_betina'].'</td>';
-
-                    echo '<td style="text-align:center">'.$total_ternak['kambing_anak_jantan'].'</td>';
-                    echo '<td style="text-align:center">'.$total_ternak['kambing_muda_jantan'].'</td>';
-                    echo '<td style="text-align:center">'.$total_ternak['kambing_dewasa_jantan'].'</td>';
-                    echo '<td style="text-align:center">'.$total_ternak['kambing_anak_betina'].'</td>';
-                    echo '<td style="text-align:center">'.$total_ternak['kambing_muda_betina'].'</td>';
-                    echo '<td style="text-align:center">'.$total_ternak['kambing_dewasa_betina'].'</td>';
-
-                    echo '<td style="text-align:center">'.$total_ternak['babi_anak_jantan'].'</td>';
-                    echo '<td style="text-align:center">'.$total_ternak['babi_muda_jantan'].'</td>';
-                    echo '<td style="text-align:center">'.$total_ternak['babi_dewasa_jantan'].'</td>';
-                    echo '<td style="text-align:center">'.$total_ternak['babi_anak_betina'].'</td>';
-                    echo '<td style="text-align:center">'.$total_ternak['babi_muda_betina'].'</td>';
-                    echo '<td style="text-align:center">'.$total_ternak['babi_dewasa_betina'].'</td>';
-
-                    echo '<td style="text-align:center">'.$total_ternak['domba_anak_jantan'].'</td>';
-                    echo '<td style="text-align:center">'.$total_ternak['domba_muda_jantan'].'</td>';
-                    echo '<td style="text-align:center">'.$total_ternak['domba_dewasa_jantan'].'</td>';
-                    echo '<td style="text-align:center">'.$total_ternak['domba_anak_betina'].'</td>';
-                    echo '<td style="text-align:center">'.$total_ternak['domba_muda_betina'].'</td>';
-                    echo '<td style="text-align:center">'.$total_ternak['domba_dewasa_betina'].'</td>';
-
-                    echo '<td style="text-align:center">'.$total_ternak['ayam_ras'].'</td>';
-                    echo '<td style="text-align:center">'.$total_ternak['ayam_buras'].'</td>';
-                    echo '<td style="text-align:center">'.$total_ternak['ayam_petelur'].'</td>';
-                    echo '<td style="text-align:center">'.$total_ternak['itik'].'</td>';
-                    echo '<td style="text-align:center">'.$total_ternak['puyuh'].'</td>';
+                    echo '<td colspan="6" style="font-weight:bold;">Total Keseluruhan Ternak</td>';
+                    echo '<td colspan="41" style="text-align:center; font-weight:bold; ">'.array_sum($total_ternak).' Ekor</td>';
                 echo '</tr>';
             echo '</tbody>';
         echo '</table>';
@@ -834,3 +788,5 @@ class TernakController extends Controller
         return redirect('ternak');
     }
 }
+
+
