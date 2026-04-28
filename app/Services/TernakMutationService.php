@@ -80,7 +80,7 @@ class TernakMutationService
             $delta = (int) ($mutasi->{$column} ?? 0) * $multiplier;
             $next = $current + $delta;
 
-            if ($next < 0) {
+            if ($next < 0 && $delta < 0) {
                 throw ValidationException::withMessages([
                     $column => 'Stok ternak tidak mencukupi untuk memproses mutasi pada kolom '.$column.'.',
                 ]);

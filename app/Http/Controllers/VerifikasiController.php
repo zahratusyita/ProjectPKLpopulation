@@ -131,15 +131,17 @@ class VerifikasiController extends Controller
 
     public function cancel(string $id)
     {
-        if (Auth::user()->user_type !== 'C') {
+        if (Auth::user()->user_type !== 'C' && Auth::user()->user_type !== 'B') {
             abort(403);
         }
 
         $verifikasi = Verifikasi::findOrFail($id);
+        $userType = Auth::user()->user_type;
+        $daerah = $userType === 'B' ? Auth::user()->kab_kota_id : Auth::user()->kecamatan_id;
 
         if (
-            $verifikasi->data_type !== 'C' ||
-            (int) $verifikasi->daerah !== (int) Auth::user()->kecamatan_id ||
+            $verifikasi->data_type !== $userType ||
+            (int) $verifikasi->daerah !== (int) $daerah ||
             (string) $verifikasi->tahun !== (string) session()->get('tahun_data') ||
             ! $verifikasi->status_pengajuan ||
             $verifikasi->status_verifikasi !== null

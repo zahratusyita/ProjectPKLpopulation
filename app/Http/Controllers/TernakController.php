@@ -46,7 +46,7 @@ class TernakController extends Controller
                 $kecamatan = Kecamatan::where('kab_kota_id', $user_kab_kota)->get();
                 $desa_kel = Desa_kelurahan::all();
                 $peternak = Peternak::where('kab_kota_id', $user_kab_kota)->get();
-                $status_verifikasi = Verifikasi::where('daerah', $user_kab_kota)->where('tahun', $now)->first();
+                $status_verifikasi = Verifikasi::where('daerah', $user_kab_kota)->where('tahun', $now)->where('data_type', 'B')->first();
                 if($peternak){
                     $ternak = DB::table('peternaks')
                         ->join('ternaks', 'peternaks.id', '=', 'ternaks.peternak_id')
@@ -64,7 +64,7 @@ class TernakController extends Controller
                 $kecamatan = Kecamatan::where('id', $user_kecamatan)->get();
                 $desa_kel = Desa_kelurahan::where('kecamatan_id', $user_kecamatan)->get();
                 $peternak = Peternak::where('kecamatan_id', $user_kecamatan)->get();
-                $status_verifikasi = Verifikasi::where('daerah', $user_kecamatan)->where('tahun', $now)->first();
+                $status_verifikasi = Verifikasi::where('daerah', $user_kecamatan)->where('tahun', $now)->where('data_type', 'C')->first();
                 if($peternak){
                     $ternak = DB::table('peternaks')
                         ->join('ternaks', 'peternaks.id', '=', 'ternaks.peternak_id')
@@ -398,7 +398,7 @@ class TernakController extends Controller
         }elseif($user_type == "B"){
             $user_kab_kota = Auth::user()->kab_kota_id;
             $peternak = Peternak::where('kab_kota_id', $user_kab_kota)->get();
-            $status_verifikasi = Verifikasi::where('daerah', $user_kab_kota)->where('tahun', $now)->first();
+            $status_verifikasi = Verifikasi::where('daerah', $user_kab_kota)->where('tahun', $now)->where('data_type', 'B')->first();
             if($peternak){
                 $ternak = DB::table('peternaks')
                     ->join('ternaks', 'peternaks.id', '=', 'ternaks.peternak_id')
@@ -423,7 +423,7 @@ class TernakController extends Controller
             $user_kab_kota = Auth::user()->kab_kota_id;
             $user_kecamatan = Auth::user()->kecamatan_id;
             $peternak = Peternak::where('kecamatan_id', $user_kecamatan)->get();
-            $status_verifikasi = Verifikasi::where('daerah', $user_kecamatan)->where('tahun', $now)->first();
+            $status_verifikasi = Verifikasi::where('daerah', $user_kecamatan)->where('tahun', $now)->where('data_type', 'C')->first();
             if($peternak){
                 $ternak = DB::table('peternaks')
                     ->join('ternaks', 'peternaks.id', '=', 'ternaks.peternak_id')

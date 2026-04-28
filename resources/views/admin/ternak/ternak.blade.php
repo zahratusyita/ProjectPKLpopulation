@@ -111,14 +111,12 @@
                     
                     <div class="d-flex flex-wrap mt-3 align-items-center" style="gap: 0.75rem;">
                         @if(Auth::user()->user_type == 'C')
-                            @if($status_verifikasi['status_pengajuan'] == 0)
                             <a href="{{ route('ternak.form') }}" class="btn btn-primary btn-modern shadow-sm" style="background-color: #1e3a5f; border-color: #1e3a5f;">
                                 <i class="fas fa-plus mr-1"></i> Tambah Data
                             </a>
                             <button type="button" class="btn btn-primary btn-modern shadow-sm" data-toggle="modal" data-target="#modal-import-ternak" style="background-color: #1e3a5f; border-color: #1e3a5f;">
                                 <i class="fas fa-file-import mr-1"></i> Import
                             </button>
-                            @endif
                         @endif
                     </div>
                 </div>
@@ -155,8 +153,6 @@
                 </div>
             @endif
 
-            <!-- Pengajuan Bar -->
-            <!-- Pengajuan bar dipindah ke area footer -->
 
             <div class="row">
                 <div class="col-12">
@@ -246,7 +242,8 @@
                                     <th rowspan="2" style="vertical-align:middle;">Itik</th>
                                     <th rowspan="2" style="vertical-align:middle;">Puyuh</th>
                                     @if(Auth::user()->user_type == "C")
-                                    <th rowspan="3" style="vertical-align:middle;">Aksi</th>
+                                    <th rowspan="3" style="vertical-align:middle; text-align:center;">Status</th>
+                                    <th rowspan="3" style="vertical-align:middle; text-align:center;">Aksi</th>
                                     @endif
                                 </tr>
                                 <tr>
@@ -364,30 +361,40 @@
                                                 <td style="text-align:center">{{ $t->itik + 0 }}</td>
                                                 <td style="text-align:center">{{ $t->puyuh + 0 }}</td>
                                                 @if(Auth::user()->user_type == "C")
-                                                <td>
+                                                <td style="text-align:center;">
                                                     @if($status_verifikasi['status_pengajuan'] == 1)
                                                         @if($status_verifikasi['status_verifikasi'] == 0)
-                                                            <p>Menunggu verifikasi data</p>
+                                                            <span class="badge" style="background-color: #fffff0; color: #d69e2e; padding: 0.4rem 0.6rem; border-radius: 6px; font-weight: 500; border: 1px solid #fef08a;">Menunggu</span>
                                                         @elseif($status_verifikasi['status_verifikasi'] == 1)
-                                                            <p>Data sudah diverifikasi</p>
+                                                            <span class="badge" style="background-color: #f0fff4; color: #38a169; padding: 0.4rem 0.6rem; border-radius: 6px; font-weight: 500; border: 1px solid #bbf7d0;">Tervalidasi</span>
                                                         @elseif($status_verifikasi['status_verifikasi'] == 2)
-                                                            <div class="d-flex">
-                                                                <a href="{{ route('ternak.edit', $t->id) }}" class="btn btn-sm btn-warning mr-2"><i class="fas fa-edit"></i> Edit</a>
-                                                                <form action="{{ route('ternak.delete', $t->id) }}" method="POST">
-                                                                    {{ csrf_field() }}
-                                                                    <button class="btn btn-sm btn-danger" onclick="return confirm('Apakah Anda  yakin untuk menghapus data ?')"><i class="fas fa-trash-alt"></i> Hapus</button>
-                                                                </form>
-                                                            </div>
+                                                            <span class="badge" style="background-color: #fee2e2; color: #dc2626; padding: 0.4rem 0.6rem; border-radius: 6px; font-weight: 500; border: 1px solid #fecaca;">Revisi</span>
                                                         @endif
                                                     @else
-                                                        <div class="d-flex">
-                                                            <a href="{{ route('ternak.edit', $t->id) }}" class="btn btn-sm btn-warning mr-2"><i class="fas fa-edit"></i> Edit</a>
-                                                            <form action="{{ route('ternak.delete', $t->id) }}" method="POST">
-                                                                {{ csrf_field() }}
-                                                                <button class="btn btn-sm btn-danger" onclick="return confirm('Apakah Anda  yakin untuk menghapus data ?')"><i class="fas fa-trash-alt"></i> Hapus</button>
-                                                            </form>
-                                                        </div>
+                                                        <span class="badge" style="background-color: #f1f5f9; color: #64748b; padding: 0.4rem 0.6rem; border-radius: 6px; font-weight: 500; border: 1px solid #e2e8f0;">Belum</span>
                                                     @endif
+                                                </td>
+                                                <td>
+                                                    <div class="d-flex align-items-center justify-content-center">
+                                                    @if($status_verifikasi['status_pengajuan'] == 1 && $status_verifikasi['status_verifikasi'] != 2)
+                                                        <button class="btn btn-secondary btn-action-icon shadow-sm mr-2" disabled style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; padding: 0; opacity:0.5;">
+                                                            <i class="fas fa-pen text-white" style="font-size: 0.85rem;"></i>
+                                                        </button>
+                                                        <button class="btn btn-secondary btn-action-icon shadow-sm" disabled style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; padding: 0; opacity:0.5;">
+                                                            <i class="fas fa-trash-alt text-white" style="font-size: 0.85rem;"></i>
+                                                        </button>
+                                                    @else
+                                                        <a href="{{ route('ternak.edit', $t->id) }}" class="btn btn-warning btn-action-icon shadow-sm mr-2" title="Edit Data" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; padding: 0;">
+                                                            <i class="fas fa-pen text-white" style="font-size: 0.85rem;"></i>
+                                                        </a>
+                                                        <form action="{{ route('ternak.delete', $t->id) }}" method="POST" class="m-0">
+                                                            {{ csrf_field() }}
+                                                            <button type="submit" class="btn btn-danger btn-action-icon shadow-sm" onclick="return confirm('Apakah Anda yakin untuk menghapus data ?')" title="Hapus Data" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; padding: 0;">
+                                                                <i class="fas fa-trash-alt" style="font-size: 0.85rem;"></i>
+                                                            </button>
+                                                        </form>
+                                                    @endif
+                                                    </div>
                                                 </td>
                                                 @endif
                                             </tr>
@@ -404,32 +411,32 @@
                                         Menampilkan data ke-<strong>{{ $ternak->firstItem() ?? 0 }}</strong> sampai <strong>{{ $ternak->lastItem() ?? 0 }}</strong> 
                                         dari Total <strong>{{ $ternak->total() }}</strong> Data
                                     </div>
-                                    <div class="d-flex flex-wrap align-items-center justify-content-end mt-2 mt-md-0">
-                                        @if(Auth::user()->user_type == 'C')
+                                    <div class="d-flex flex-wrap align-items-center justify-content-end mt-2 mt-md-0 w-100">
+                                        <!-- Verification Actions Area -->
+                                        @if(Auth::user()->user_type == 'B' || Auth::user()->user_type == 'C')
                                             @if($status_verifikasi['status_pengajuan'] == 0)
-                                                <a href="{{ route('ajukan') }}" class="btn btn-primary btn-modern shadow-sm mr-3" style="background-color: #1e3a5f; border-color: #1e3a5f;"><i class="fas fa-paper-plane mr-1"></i> Ajukan Data</a>
+                                                <a href="{{ route('ajukan') }}" class="btn btn-primary btn-modern shadow-sm mr-2" style="background-color: #1e3a5f; border-color: #1e3a5f;"><i class="fas fa-paper-plane mr-1"></i> Ajukan Verifikasi Data</a>
                                             @elseif($status_verifikasi['status_pengajuan'] == 1)
                                                 @if($status_verifikasi['status_verifikasi'] == null)
-                                                    <button class="btn btn-warning btn-modern shadow-sm border-0 mr-3"><i class="fas fa-hourglass-half mr-1"></i> Menunggu Verifikasi</button>
                                                     @if(!empty($status_verifikasi['id']))
-                                                        <form action="{{ route('verifikasi.cancel', $status_verifikasi['id']) }}" method="POST" class="m-0 mr-3">
+                                                        <form action="{{ route('verifikasi.cancel', $status_verifikasi['id']) }}" method="POST" class="m-0 mr-2">
                                                             @csrf
                                                             <button type="submit" class="btn btn-outline-danger btn-modern shadow-sm" onclick="return confirm('Batalkan pengajuan data tahun ini?')">
                                                                 <i class="fas fa-times mr-1"></i> Batalkan Pengajuan
                                                             </button>
                                                         </form>
                                                     @endif
-                                                @elseif($status_verifikasi['status_verifikasi'] == 1)
-                                                    <button class="btn btn-primary btn-modern shadow-sm border-0 mr-3" style="background-color: #1e3a5f;"><i class="fas fa-check-circle mr-1"></i> Data Tervalidasi</button>
                                                 @elseif($status_verifikasi['status_verifikasi'] == 2)
-                                                    <form action="{{ route('verifikasi.update', $status_verifikasi['id']) }}" method="POST" class="m-0 mr-3 d-flex align-items-center">
+                                                    <form action="{{ route('verifikasi.update', $status_verifikasi['id']) }}" method="POST" class="m-0 mr-2 d-flex align-items-center flex-wrap">
                                                         {{ csrf_field() }}
-                                                        <span class="text-danger small mr-2"><b>Revisi:</b> {{ $status_verifikasi['catatan'] }}</span>
-                                                        <button type="submit" class="btn btn-danger btn-modern shadow-sm"><i class="fas fa-paper-plane mr-1"></i> Ajukan Ulang Data</button>
+                                                        <span class="text-danger small mr-3 mb-2 mb-md-0"><b>Catatan Revisi:</b> {{ $status_verifikasi['catatan'] }}</span>
+                                                        <button type="submit" class="btn btn-danger btn-modern shadow-sm"><i class="fas fa-paper-plane mr-1"></i> Ajukan Ulang Verifikasi</button>
                                                     </form>
                                                 @endif
                                             @endif
                                         @endif
+                                        
+                                        <!-- Export & Pagination -->
                                         @if(!empty($_REQUEST['tahun']) OR !empty($_REQUEST['search']) OR !empty($_REQUEST['kab_kota']) OR !empty($_REQUEST['kecamatan']) OR !empty($_REQUEST['desa_kel']))
                                         <a href="{{ route('ternak.export').'?kab_kota='.(isset($_REQUEST['kab_kota'])?$_REQUEST['kab_kota']:'').'&kecamatan='.(isset($_REQUEST['kecamatan'])?$_REQUEST['kecamatan']:'').'&desa_kel='.(isset($_REQUEST['desa_kel'])?$_REQUEST['desa_kel']:'').'&search='.(isset($_REQUEST['search'])?$_REQUEST['search']:'') }}" class="btn btn-primary btn-modern shadow-sm mr-3" style="background-color: #1e3a5f; border-color: #1e3a5f;">
                                             <i class="fas fa-file-export"></i> Export

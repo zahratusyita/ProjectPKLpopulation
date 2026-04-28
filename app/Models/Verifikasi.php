@@ -15,6 +15,7 @@ class Verifikasi extends Model
         'status_pengajuan',
         'tanggal_pengajuan',
         'status_verifikasi',
-        'tanggal_verifikasi'
+        'tanggal_verifikasi',
+        'catatan'
     ];
 }
