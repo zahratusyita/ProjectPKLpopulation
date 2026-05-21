@@ -60,10 +60,19 @@ Route::get('/ternak/search', [TernakController::class, 'search'])->middleware('a
 Route::get('/ternak/export', [TernakController::class, 'export'])->middleware('auth')->name('ternak.export');
 Route::post('/ternak/import', [TernakController::class, 'import'])->middleware('auth')->name('ternak.import');
 
+// Pengajuan verifikasi per-data & batch (Admin Kecamatan)
+Route::post('/ternak/ajukan/{id}', [TernakController::class, 'ajukanSingle'])->middleware('auth')->name('ternak.ajukan');
+Route::post('/ternak/ajukan-semua', [TernakController::class, 'ajukanSemua'])->middleware('auth')->name('ternak.ajukan-semua');
+Route::post('/ternak/batal-ajukan/{id}', [TernakController::class, 'batalAjukan'])->middleware('auth')->name('ternak.batal-ajukan');
+Route::post('/ternak/batal-semua', [TernakController::class, 'batalSemua'])->middleware('auth')->name('ternak.batal-semua');
+
 Route::get('/verifikasi', [VerifikasiController::class, 'index'])->middleware('auth')->name('verifikasi');
 Route::get('/ajukan', [VerifikasiController::class, 'store'])->middleware('auth')->name('ajukan');
 Route::post('/verifikasi/update/{id}', [VerifikasiController::class, 'update'])->middleware('auth')->name('verifikasi.update');
 Route::post('/verifikasi/cancel/{id}', [VerifikasiController::class, 'cancel'])->middleware('auth')->name('verifikasi.cancel');
+Route::post('/verifikasi/single/{id}', [VerifikasiController::class, 'verifySingle'])->middleware('auth')->name('verifikasi.single');
+Route::post('/verifikasi/all', [VerifikasiController::class, 'verifyAll'])->middleware('auth')->name('verifikasi.all');
+Route::post('/verifikasi/reject/{id}', [VerifikasiController::class, 'rejectSingle'])->middleware('auth')->name('verifikasi.reject');
 Route::get('/verifikasi/search', [VerifikasiController::class, 'search'])->middleware('auth')->name('verifikasi.search');
 Route::get('/panduan', [HomeController::class, 'panduan'])->middleware('auth')->name('panduan');
 

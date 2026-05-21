@@ -77,7 +77,7 @@
             <!-- Header Section -->
             <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 mt-2">
                 <div class="mb-3 mb-md-0">
-                    <h1 class="m-0 font-weight-bold" style="color: #1e3a5f !important; font-size: 1.8rem;">Histori Verifikasi Data</h1>
+                    <h1 class="m-0 font-weight-bold" style="color: #1e3a5f !important; font-size: 1.8rem;">Verifikasi Data</h1>
                     <p class="text-muted mb-0 mt-1" style="font-size: 0.95rem;">Pantau dan kelola riwayat verifikasi data.</p>
                 </div>
                 
@@ -110,7 +110,7 @@
                                                 <option value="{{$kk->id}}">{{$kk->nama_kab_kota}}</option>
                                                 @endforeach
                                             </select>
-                                        @elseif(Auth::user()->user_type == "B" or Auth::user()->user_type == "C")
+                                        @elseif(Auth::user()->user_type == "B")
                                             <select name="kab_kota" id="kab_kota" class="form-control border-0 shadow-sm rounded" style="padding: 0.5rem;">
                                                 @foreach($kab_kota as $kk)
                                                 <option value="{{$kk->id}}">{{$kk->nama_kab_kota}}</option>
@@ -118,21 +118,17 @@
                                             </select>
                                         @endif
                                     </div>
+                                    @if(Auth::user()->user_type == "B")
                                     <div class="col-md-5 mb-3 mb-md-0">
                                         <label class="text-dark font-weight-bold mb-2"><i class="fas fa-map mr-1"></i> Kecamatan</label>
-                                        @if(Auth::user()->user_type == "A")
-                                            <select name="kecamatan" id="kecamatan" class="form-control border-0 shadow-sm rounded" style="padding: 0.5rem;">
-                                                <option value="">Pilih Kecamatan</option>
-                                            </select>
-                                        @elseif(Auth::user()->user_type == "B" or Auth::user()->user_type == "C")
-                                            <select name="kecamatan" id="kecamatan" class="form-control border-0 shadow-sm rounded" style="padding: 0.5rem;">
-                                                <option value="">Pilih Kecamatan</option>
-                                                @foreach($kecamatan as $kc)
-                                                <option value="{{ $kc->id }}">{{ $kc->nama_kecamatan }}</option>
-                                                @endforeach
-                                            </select>
-                                        @endif
+                                        <select name="kecamatan" id="kecamatan" class="form-control border-0 shadow-sm rounded" style="padding: 0.5rem;">
+                                            <option value="">Pilih Kecamatan</option>
+                                            @foreach($kecamatan as $kc)
+                                            <option value="{{ $kc->id }}">{{ $kc->nama_kecamatan }}</option>
+                                            @endforeach
+                                        </select>
                                     </div>
+                                    @endif
                                     <div class="col-md-2 mb-3 mb-md-0">
                                         <button type="submit" class="btn btn-light btn-block btn-modern shadow-sm font-weight-bold" style="background-color: #ffffff; border-color: #cbd5e1; color: #334155; padding: 0.45rem; font-size: 0.9rem;">
                                             <i class="fas fa-search"></i> Cari
@@ -142,174 +138,255 @@
                             </div>
                         </div>
                         <!-- /.card-header -->
-                            <div class="card-body table-responsive p-0">
-                                <table class="table table-modern text-nowrap align-middle">
-                                    <thead>
-                                    <tr>
-                                        <th>No.</th>
-                                        <th>Tahun</th>
-                                        @if(Auth::user()->user_type == "A")
-                                        <th>Kabupaten/Kota</th>
-                                        @elseif(Auth::user()->user_type == "B")
-                                        <th>Kecamatan</th>
+
+                        <div class="card-body table-responsive p-0">
+                        @if(Auth::user()->user_type == 'A')
+                            {{-- ========================================================= --}}
+                            {{-- TAMPILAN ADMIN A (PROVINSI) : PENGAJUAN REGIONAL KABUPATEN --}}
+                            {{-- ========================================================= --}}
+                            <table class="table table-modern text-nowrap align-middle">
+                                <thead>
+                                <tr>
+                                    <th>No.</th>
+                                    <th>Tahun</th>
+                                    <th>Kabupaten/Kota</th>
+                                    <th>Status Pengajuan</th>
+                                    <th>Tanggal Pengajuan</th>
+                                    <th>Status Verifikasi</th>
+                                    <th>Tanggal Verifikasi</th>
+                                    <th>Aksi</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($verifikasi as $v)
+                                        @if($v != '')
+                                            <tr>
+                                                <td>{{ $no++ }}</td>
+                                                <td>{{ $v->tahun }}</td>
+                                                @foreach($kab_kota as $kk)
+                                                    @if($v->daerah == $kk->id)
+                                                    <td>{{ $kk->nama_kab_kota }}</td>
+                                                    @endif
+                                                @endforeach
+
+                                                @if($v->status_pengajuan == true)
+                                                <td><button class="btn btn-sm btn-success">Sudah diajukan</button></td>
+                                                @elseif($v->status_pengajuan == false)
+                                                <td><button class="btn btn-sm btn-danger">Belum diajukan</button></td>
+                                                @endif
+
+                                                <td>{{ $v->tanggal_pengajuan }}</td>
+
+                                                @if($v->status_verifikasi == 0)
+                                                <td><button class="btn btn-sm btn-warning">Menunggu diverifikasi</button></td>
+                                                @elseif($v->status_verifikasi == 1)
+                                                <td><button class="btn btn-sm btn-success">Sudah diverifikasi</button></td>
+                                                @elseif($v->status_verifikasi == 2)
+                                                <td><button class="btn btn-sm btn-danger">Belum diverifikasi</button></td>
+                                                @endif
+                                                
+                                                @if($v->status_verifikasi == 0)
+                                                <td>Menunggu diverifikasi</td>
+                                                @elseif($v->status_verifikasi == 1)
+                                                <td>{{ $v->tanggal_verifikasi }}</td>
+                                                @elseif($v->status_verifikasi == 2)
+                                                <td>Belum diverifikasi</td>
+                                                @endif
+                                                
+                                                @if($v->status_verifikasi == 1)
+                                                <td>Sudah diverifikasi<br><p><small>Catatan: {{ $v->catatan }}</small></p></td>
+                                                @elseif($v->status_verifikasi == 0 OR $v->status_verifikasi == 2)
+                                                <td>
+                                                    <button type="button" class="btn btn-sm btn-primary" data-toggle="modal" data-target="#modal-sm-{{ $v->id }}">
+                                                        <i class="fas fa-check"></i> Verifikasi
+                                                    </button>
+                                                    @if($v->status_verifikasi == 2)
+                                                    <p><small>Catatan: {{ $v->catatan }}</small></p>
+                                                    @endif
+                                                </td>
+                                                @endif
+                                            </tr>
                                         @endif
-                                        <th>Status Pengajuan</th>
-                                        <th>Tanggal Pengajuan</th>
-                                        <th>Status Verifikasi</th>
-                                        <th>Tanggal Verifikasi</th>
-                                        @if(Auth::user()->user_type == "A" OR Auth::user()->user_type == "B")
-                                            <th>Aksi</th>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        @elseif(Auth::user()->user_type == 'B')
+                            {{-- ========================================================= --}}
+                            {{-- TAMPILAN ADMIN B (KABUPATEN) : ANTRIAN PER-TERNAK        --}}
+                            {{-- ========================================================= --}}
+                            <table class="table table-modern text-nowrap align-middle">
+                                <thead>
+                                <tr>
+                                    <th>No.</th>
+                                    <th>Peternak (NIK)</th>
+                                    <th>Kecamatan</th>
+                                    <th>Desa/Kel</th>
+                                    <th>Status Pengajuan</th>
+                                    <th>Aksi</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse($ternak_pending as $v)
+                                        <tr>
+                                            <td>{{ $no++ }}</td>
+                                            <td>{{ $v->nama }}<br><small class="text-muted">{{ $v->nik }}</small></td>
+                                            @foreach($kecamatan as $kc)
+                                                @if($v->kecamatan_id == $kc->id)
+                                                <td>{{ $kc->nama_kecamatan }}</td>
+                                                @endif
+                                            @endforeach
+                                            
+                                            <td>
+                                                @foreach($desa_kel as $dk)
+                                                    @if($v->desa_kel_id == $dk->id)
+                                                        {{ $dk->nama_desa_kel }}
+                                                    @endif
+                                                @endforeach
+                                            </td>
+
+                                            <td><span class="badge" style="background-color: #fffff0; color: #d69e2e; padding: 0.4rem 0.6rem; border-radius: 6px; font-weight: 500; border: 1px solid #fef08a;">Menunggu</span></td>
+                                            
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <form action="{{ route('verifikasi.single', $v->id) }}" method="POST" class="m-0 mr-2">
+                                                        @csrf
+                                                        <button type="submit" class="btn btn-sm btn-success btn-modern shadow-sm" onclick="return confirm('Verifikasi data peternak {{ $v->nama }}?')">
+                                                            <i class="fas fa-check mr-1"></i> Verifikasi
+                                                        </button>
+                                                    </form>
+                                                    
+                                                    <button type="button" class="btn btn-sm btn-danger btn-modern shadow-sm" data-toggle="modal" data-target="#modal-reject-{{ $v->id }}">
+                                                        <i class="fas fa-times mr-1"></i> Tolak / Revisi
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="6" class="text-center py-5">
+                                                <div class="text-muted">
+                                                    <i class="fas fa-check-circle fa-3x mb-3 text-success" style="opacity: 0.5;"></i>
+                                                    <h5>Semua data dari Kecamatan sudah diverifikasi</h5>
+                                                    <p>Tidak ada data pengajuan baru yang menunggu.</p>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        @endif
+                        </div>
+                        
+                        <!-- /.card-body -->
+                        <div class="card-footer bg-white border-top-0 pt-4 pb-4 rounded-bottom">
+                            <div class="d-flex flex-column flex-md-row justify-content-between align-items-center">
+                                @if(Auth::user()->user_type == 'B')
+                                    <div class="text-muted mb-3 mb-md-0" style="font-size: 1rem;">
+                                        <i class="fas fa-info-circle mr-1 text-primary"></i> 
+                                        Menampilkan data ke-<strong>{{ $ternak_pending->firstItem() ?? 0 }}</strong> sampai <strong>{{ $ternak_pending->lastItem() ?? 0 }}</strong> 
+                                        dari Total <strong>{{ $ternak_pending->total() }}</strong> Data
+                                    </div>
+                                    <div class="d-flex flex-wrap align-items-center justify-content-end mt-2 mt-md-0 w-100 pagination-modern">
+                                        @if($ternak_pending->total() > 0)
+                                            <form action="{{ route('verifikasi.all') }}" method="POST" class="mr-3 m-0">
+                                                @csrf
+                                                <button type="submit" class="btn btn-success btn-modern shadow-sm" onclick="return confirm('Verifikasi SEMUA data yang sedang menunggu?')">
+                                                    <i class="fas fa-check-double mr-1"></i> Verifikasi Semua
+                                                </button>
+                                            </form>
                                         @endif
-                                    </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach($verifikasi as $v)
-                                            @if($v == '')
-                                                <!-- <tr><td><h3>Tidak ada data</h3></td></tr> -->
-                                                <tr>
-                                                    <td>1</td>
-                                                    <td>2</td>
-                                                    <td>3</td>
-                                                    <td>4</td>
-                                                    <td>5</td>
-                                                    <td>6</td>
-                                                    <td>7</td>
-                                                    <td>8</td>
-                                                </tr>
-                                            @else
-                                                <tr>
-                                                    <td>{{ $no++ }}</td>
-                                                    <td>{{ $v->tahun }}</td>
-                                                    @if(Auth::user()->user_type == "A")
-                                                        @foreach($kab_kota as $kk)
-                                                            @if($v->daerah == $kk->id)
-                                                            <td>{{ $kk->nama_kab_kota }}</td>
-                                                            @endif
-                                                        @endforeach
-                                                    @elseif(Auth::user()->user_type == "B")
-                                                        @foreach($kecamatan as $kc)
-                                                            @if($v->daerah == $kc->id)
-                                                            <td>{{ $kc->nama_kecamatan }}</td>
-                                                            @endif
-                                                        @endforeach
-                                                    @endif
-
-                                                    @if($v->status_pengajuan == true)
-                                                    <td><button class="btn btn-sm btn-success">Sudah diajukan</button></td>
-                                                    @elseif($v->status_pengajuan == false)
-                                                    <td><button class="btn btn-sm btn-danger">Belum diajukan</button></td>
-                                                    @endif
-
-                                                    <td>{{ $v->tanggal_pengajuan }}</td>
-
-                                                    @if($v->status_verifikasi == 0)
-                                                    <td><button class="btn btn-sm btn-warning">Menunggu diverifikasi</button></td>
-                                                    @elseif($v->status_verifikasi == 1)
-                                                    <td><button class="btn btn-sm btn-success">Sudah diverifikasi</button></td>
-                                                    @elseif($v->status_verifikasi == 2)
-                                                    <td><button class="btn btn-sm btn-danger">Belum diverifikasi</button></td>
-                                                    @endif
-                                                    
-                                                    @if($v->status_verifikasi == 0)
-                                                    <td>Menunggu diverifikasi</td>
-                                                    @elseif($v->status_verifikasi == 1)
-                                                    <td>{{ $v->tanggal_verifikasi }}</td>
-                                                    @elseif($v->status_verifikasi == 2)
-                                                    <td>Belum diverifikasi</td>
-                                                    @endif
-                                                    
-                                                    @if(Auth::user()->user_type == "A" OR Auth::user()->user_type == "B")
-                                                        @if($v->status_verifikasi == 1)
-                                                        <td>Sudah diverifikasi<br><p><small>Catatan: {{ $v->catatan }}</small></p></td>
-                                                        @elseif($v->status_verifikasi == 0 OR $v->status_verifikasi == 2)
-                                                        <td>
-                                                            <button type="button" class="btn btn-sm btn-primary" data-toggle="modal" data-target="#modal-sm-{{ $v->id }}">
-                                                                <i class="fas fa-check"></i> Verifikasi
-                                                            </button>
-                                                            @if($v->status_verifikasi == 2)
-                                                            <p><small>Catatan: {{ $v->catatan }}</small></p>
-                                                            @endif
-                                                        </td>
-                                                        @endif
-                                                    @endif
-                                                </tr>
-                                            @endif
-                                        @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
-                            <!-- /.card-body -->
-                            <div class="card-footer bg-white border-top-0 pt-4 pb-4 rounded-bottom">
-                                <div class="d-flex flex-column flex-md-row justify-content-between align-items-center">
+                                        {{ $ternak_pending->links() }}
+                                    </div>
+                                @elseif(Auth::user()->user_type == 'A')
                                     <div class="text-muted mb-3 mb-md-0" style="font-size: 1rem;">
                                         <i class="fas fa-info-circle mr-1 text-primary"></i> 
                                         Menampilkan data ke-<strong>{{ $verifikasi->firstItem() ?? 0 }}</strong> sampai <strong>{{ $verifikasi->lastItem() ?? 0 }}</strong> 
-                                        dari Total <strong>{{ $verifikasi->total() }}</strong> Data
+                                        dari Total <strong>{{ $verifikasi->total() }}</strong> Data Kabupaten
                                     </div>
                                     <div class="d-flex flex-wrap align-items-center justify-content-end mt-2 mt-md-0 pagination-modern">
                                         {{ $verifikasi->links() }}
                                     </div>
-                                </div>
+                                @endif
                             </div>
                         </div>
-                    <!-- /.card -->
                     </div>
+                    <!-- /.card -->
                 </div>
             </div>
         </section>
     </div>
 </div>
 
-@foreach($verifikasi as $vk)
-<div class="modal fade" id="modal-sm-{{ $vk->id }}">
-<div class="modal-dialog modal-sm">
-    <div class="modal-content">
-    <div class="modal-header">
-        <h6 class="modal-title">Verifikasi (@if(Auth::user()->user_type == "A")
-                                                @foreach($kab_kota as $kk)
-                                                    @if($v->daerah == $kk->id)
-                                                        {{ $kk->nama_kab_kota }}
-                                                    @endif
-                                                @endforeach
-                                            @elseif(Auth::user()->user_type == "B")
-                                                @foreach($kecamatan as $kc)
-                                                    @if($v->daerah == $kc->id)
-                                                        {{ $kc->nama_kecamatan }}
-                                                    @endif
-                                                @endforeach
-                                            @endif 
-                                            {{ $v->tahun }} )</h6>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-        <span aria-hidden="true">&times;</span>
-        </button>
+@if(Auth::user()->user_type == 'A')
+    {{-- Modal Verifikasi untuk Admin A --}}
+    @foreach($verifikasi as $vk)
+    <div class="modal fade" id="modal-sm-{{ $vk->id }}">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+        <div class="modal-header">
+            <h6 class="modal-title">Verifikasi ({{ $vk->nama_kab_kota }} - {{ $vk->tahun }})</h6>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        <div class="modal-body">
+            <form action="{{ route('verifikasi.update', $vk->id) }}" method="POST">
+            {{ csrf_field() }}
+                <div>
+                    <textarea class="form-control" name="catatan" id="catatan" placeholder="Catatan&hellip;"></textarea>
+                </div>
+                <div class="row m-3">
+                    <div class="col-sm-6">
+                        <input class="form-check-input" type="radio" name="verifikasi" value="1">
+                        <label class="form-check-label">Verifikasi</label>
+                    </div>
+                    <div class="col-sm-6">
+                        <input class="form-check-input" type="radio" name="verifikasi" value="2">
+                        <label class="form-check-label">Tolak</label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer justify-content-between">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                <button type="submit" class="btn btn-primary">Submit</button>
+            </div>
+            </form>
+        </div>
+        <!-- /.modal-content -->
     </div>
-    <div class="modal-body">
-        <form action="{{ route('verifikasi.update', $v->id) }}" method="POST">
-        {{ csrf_field() }}
-            <div>
-                <textarea class="form-control" name="catatan" id="catatan" placeholder="Catatan&hellip;"></textarea>
-            </div>
-            <div class="row m-3">
-                <div class="col-sm-6">
-                    <input class="form-check-input" type="radio" name="verifikasi" value="1">
-                    <label class="form-check-label">Verifikasi</label>
-                </div>
-                <div class="col-sm-6">
-                    <input class="form-check-input" type="radio" name="verifikasi" value="2">
-                    <label class="form-check-label">Tolak</label>
-                </div>
-            </div>
+    <!-- /.modal-dialog -->
+    </div>
+    <!-- /.modal -->
+    @endforeach
+@elseif(Auth::user()->user_type == 'B')
+    {{-- Modal Tolak/Revisi untuk Admin B --}}
+    @foreach($ternak_pending as $vk)
+    <div class="modal fade" id="modal-reject-{{ $vk->id }}">
+    <div class="modal-dialog">
+        <div class="modal-content">
+        <div class="modal-header bg-danger">
+            <h5 class="modal-title text-white"><i class="fas fa-exclamation-circle mr-2"></i> Tolak / Minta Revisi</h5>
+            <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+            </button>
         </div>
-        <div class="modal-footer justify-content-between">
-            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-            <button type="submit" class="btn btn-primary">Submit</button>
-        </div>
+        <form action="{{ route('verifikasi.reject', $vk->id) }}" method="POST">
+            @csrf
+            <div class="modal-body">
+                <p>Anda akan menolak/meminta revisi untuk data peternak <strong>{{ $vk->nama }}</strong>.</p>
+                <div class="form-group">
+                    <label for="catatan">Catatan Revisi <span class="text-danger">*</span></label>
+                    <textarea class="form-control" name="catatan" id="catatan" rows="4" placeholder="Masukkan alasan penolakan atau catatan revisi... (wajib diisi)" required></textarea>
+                </div>
+            </div>
+            <div class="modal-footer justify-content-between">
+                <button type="button" class="btn btn-light" data-dismiss="modal">Batal</button>
+                <button type="submit" class="btn btn-danger"><i class="fas fa-paper-plane mr-1"></i> Kirim Revisi</button>
+            </div>
         </form>
+        </div>
     </div>
-    <!-- /.modal-content -->
-</div>
-<!-- /.modal-dialog -->
-</div>
-<!-- /.modal -->
-@endforeach
+    </div>
+    @endforeach
+@endif
 @endsection

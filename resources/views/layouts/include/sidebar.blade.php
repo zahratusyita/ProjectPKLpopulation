@@ -53,19 +53,19 @@
               </li>
               <li class="nav-item">
                 <a href="{{ url('mutasi/kelahiran') }}" class="nav-link {{ request()->is('mutasi/kelahiran*') ? 'active':'' }}">
-                  <i class="fas fa-baby nav-icon" style="font-size: 0.85rem;"></i>
+                  <img src="{{ asset('assets/icons/icon_kelahiran.png') }}" class="nav-icon" style="width: 1.1rem; height: 1.1rem; object-fit: contain; margin-left: 2px; margin-right: 6px; opacity: 0.9;" alt="Kelahiran">
                   <p>Data Kelahiran</p>
                 </a>
               </li>
               <li class="nav-item">
                 <a href="{{ url('mutasi/kematian') }}" class="nav-link {{ request()->is('mutasi/kematian*') ? 'active':'' }}">
-                  <i class="fas fa-skull nav-icon" style="font-size: 0.85rem;"></i>
+                  <img src="{{ asset('assets/icons/icon_kematian.png') }}" class="nav-icon" style="width: 1.1rem; height: 1.1rem; object-fit: contain; margin-left: 2px; margin-right: 6px; opacity: 0.9;" alt="Kematian">
                   <p>Data Kematian</p>
                 </a>
               </li>
               <li class="nav-item">
                 <a href="{{ url('mutasi/pemotongan') }}" class="nav-link {{ request()->is('mutasi/pemotongan*') ? 'active':'' }}">
-                  <i class="fas fa-cut nav-icon" style="font-size: 0.85rem;"></i>
+                  <img src="{{ asset('assets/icons/icon_pemotongan.png') }}" class="nav-icon" style="width: 1.1rem; height: 1.1rem; object-fit: contain; margin-left: 2px; margin-right: 6px; opacity: 0.9;" alt="Pemotongan">
                   <p>Data Pemotongan</p>
                 </a>
               </li>

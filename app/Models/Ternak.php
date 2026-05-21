@@ -53,7 +53,8 @@ class Ternak extends Model
         'ayam_petelur',
         'itik',
         'puyuh',
-        'keterangan'
+        'keterangan',
+        'status_pengajuan',
     ];
 
     public function Peternak(){

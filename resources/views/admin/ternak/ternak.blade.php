@@ -361,36 +361,60 @@
                                                 <td style="text-align:center">{{ $t->itik + 0 }}</td>
                                                 <td style="text-align:center">{{ $t->puyuh + 0 }}</td>
                                                 @if(Auth::user()->user_type == "C")
+                                                {{-- STATUS BADGE: langsung dari $t->status_pengajuan --}}
                                                 <td style="text-align:center;">
-                                                    @if($status_verifikasi['status_pengajuan'] == 1)
-                                                        @if($status_verifikasi['status_verifikasi'] == 0)
-                                                            <span class="badge" style="background-color: #fffff0; color: #d69e2e; padding: 0.4rem 0.6rem; border-radius: 6px; font-weight: 500; border: 1px solid #fef08a;">Menunggu</span>
-                                                        @elseif($status_verifikasi['status_verifikasi'] == 1)
-                                                            <span class="badge" style="background-color: #f0fff4; color: #38a169; padding: 0.4rem 0.6rem; border-radius: 6px; font-weight: 500; border: 1px solid #bbf7d0;">Tervalidasi</span>
-                                                        @elseif($status_verifikasi['status_verifikasi'] == 2)
-                                                            <span class="badge" style="background-color: #fee2e2; color: #dc2626; padding: 0.4rem 0.6rem; border-radius: 6px; font-weight: 500; border: 1px solid #fecaca;">Revisi</span>
-                                                        @endif
-                                                    @else
-                                                        <span class="badge" style="background-color: #f1f5f9; color: #64748b; padding: 0.4rem 0.6rem; border-radius: 6px; font-weight: 500; border: 1px solid #e2e8f0;">Belum</span>
+                                                    @php $sp = (int)($t->status_pengajuan ?? 0); @endphp
+                                                    @if($sp === 0)
+                                                        <span class="badge" style="background-color:#f1f5f9;color:#64748b;padding:0.4rem 0.6rem;border-radius:6px;font-weight:500;border:1px solid #e2e8f0;">Belum</span>
+                                                    @elseif($sp === 1)
+                                                        <span class="badge" style="background-color:#fffff0;color:#d69e2e;padding:0.4rem 0.6rem;border-radius:6px;font-weight:500;border:1px solid #fef08a;">Menunggu</span>
+                                                    @elseif($sp === 2)
+                                                        <span class="badge" style="background-color:#f0fff4;color:#38a169;padding:0.4rem 0.6rem;border-radius:6px;font-weight:500;border:1px solid #bbf7d0;">Tervalidasi</span>
+                                                    @elseif($sp === 3)
+                                                        <span class="badge" style="background-color:#fee2e2;color:#dc2626;padding:0.4rem 0.6rem;border-radius:6px;font-weight:500;border:1px solid #fecaca;">Revisi</span>
                                                     @endif
                                                 </td>
+
+                                                {{-- AKSI PER BARIS --}}
                                                 <td>
-                                                    <div class="d-flex align-items-center justify-content-center">
-                                                    @if($status_verifikasi['status_pengajuan'] == 1 && $status_verifikasi['status_verifikasi'] != 2)
-                                                        <button class="btn btn-secondary btn-action-icon shadow-sm mr-2" disabled style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; padding: 0; opacity:0.5;">
-                                                            <i class="fas fa-pen text-white" style="font-size: 0.85rem;"></i>
+                                                    <div class="d-flex align-items-center justify-content-center" style="gap:4px;">
+                                                    @if($sp === 1)
+                                                        {{-- Menunggu: edit & hapus dikunci, tombol Batalkan --}}
+                                                        <button class="btn btn-secondary btn-action-icon shadow-sm" disabled title="Terkunci saat menunggu verifikasi" style="width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;padding:0;opacity:0.35;">
+                                                            <i class="fas fa-pen text-white" style="font-size:0.85rem;"></i>
                                                         </button>
-                                                        <button class="btn btn-secondary btn-action-icon shadow-sm" disabled style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; padding: 0; opacity:0.5;">
-                                                            <i class="fas fa-trash-alt text-white" style="font-size: 0.85rem;"></i>
+                                                        <button class="btn btn-secondary btn-action-icon shadow-sm" disabled title="Terkunci saat menunggu verifikasi" style="width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;padding:0;opacity:0.35;">
+                                                            <i class="fas fa-trash-alt text-white" style="font-size:0.85rem;"></i>
+                                                        </button>
+                                                        <form action="{{ route('ternak.batal-ajukan', $t->id) }}" method="POST" class="m-0">
+                                                            @csrf
+                                                            <button type="submit" class="btn btn-danger btn-action-icon shadow-sm" title="Batalkan Pengajuan" onclick="return confirm('Batalkan pengajuan data ini?')" style="width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;padding:0;">
+                                                                <i class="fas fa-ban" style="font-size:0.8rem;"></i>
+                                                            </button>
+                                                        </form>
+                                                    @elseif($sp === 2)
+                                                        {{-- Tervalidasi: semua terkunci --}}
+                                                        <button class="btn btn-secondary btn-action-icon shadow-sm" disabled style="width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;padding:0;opacity:0.35;">
+                                                            <i class="fas fa-pen text-white" style="font-size:0.85rem;"></i>
+                                                        </button>
+                                                        <button class="btn btn-secondary btn-action-icon shadow-sm" disabled style="width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;padding:0;opacity:0.35;">
+                                                            <i class="fas fa-trash-alt text-white" style="font-size:0.85rem;"></i>
                                                         </button>
                                                     @else
-                                                        <a href="{{ route('ternak.edit', $t->id) }}" class="btn btn-warning btn-action-icon shadow-sm mr-2" title="Edit Data" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; padding: 0;">
-                                                            <i class="fas fa-pen text-white" style="font-size: 0.85rem;"></i>
+                                                        {{-- Belum (0) atau Revisi (3): edit, hapus, dan ajukan --}}
+                                                        <a href="{{ route('ternak.edit', $t->id) }}" class="btn btn-warning btn-action-icon shadow-sm" title="Edit Data" style="width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;padding:0;">
+                                                            <i class="fas fa-pen text-white" style="font-size:0.85rem;"></i>
                                                         </a>
                                                         <form action="{{ route('ternak.delete', $t->id) }}" method="POST" class="m-0">
                                                             {{ csrf_field() }}
-                                                            <button type="submit" class="btn btn-danger btn-action-icon shadow-sm" onclick="return confirm('Apakah Anda yakin untuk menghapus data ?')" title="Hapus Data" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; padding: 0;">
-                                                                <i class="fas fa-trash-alt" style="font-size: 0.85rem;"></i>
+                                                            <button type="submit" class="btn btn-danger btn-action-icon shadow-sm" onclick="return confirm('Apakah Anda yakin untuk menghapus data ?')" title="Hapus Data" style="width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;padding:0;">
+                                                                <i class="fas fa-trash-alt" style="font-size:0.85rem;"></i>
+                                                            </button>
+                                                        </form>
+                                                        <form action="{{ route('ternak.ajukan', $t->id) }}" method="POST" class="m-0">
+                                                            @csrf
+                                                            <button type="submit" class="btn btn-primary btn-action-icon shadow-sm" title="{{ $sp === 3 ? 'Ajukan Ulang' : 'Ajukan Verifikasi' }}" style="width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;padding:0;background-color:#1e3a5f;border-color:#1e3a5f;">
+                                                                <i class="fas fa-paper-plane" style="font-size:0.8rem;"></i>
                                                             </button>
                                                         </form>
                                                     @endif
@@ -412,26 +436,40 @@
                                         dari Total <strong>{{ $ternak->total() }}</strong> Data
                                     </div>
                                     <div class="d-flex flex-wrap align-items-center justify-content-end mt-2 mt-md-0 w-100">
-                                        <!-- Verification Actions Area -->
-                                        @if(Auth::user()->user_type == 'B' || Auth::user()->user_type == 'C')
+                                        {{-- Verification Actions Area --}}
+                                        @if(Auth::user()->user_type == 'C')
+                                            {{-- Admin Kecamatan: tombol Ajukan Semua & Batalkan Semua --}}
+                                            <form action="{{ route('ternak.batal-semua') }}" method="POST" class="m-0 mr-2">
+                                                @csrf
+                                                <button type="submit" class="btn btn-outline-danger btn-modern shadow-sm" onclick="return confirm('Batalkan SEMUA pengajuan yang sedang menunggu?')">
+                                                    <i class="fas fa-ban mr-1"></i> Batalkan Semua
+                                                </button>
+                                            </form>
+                                            <form action="{{ route('ternak.ajukan-semua') }}" method="POST" class="m-0 mr-2">
+                                                @csrf
+                                                <button type="submit" class="btn btn-primary btn-modern shadow-sm" style="background-color:#1e3a5f;border-color:#1e3a5f;" onclick="return confirm('Ajukan SEMUA data (Belum/Revisi) untuk verifikasi?')">
+                                                    <i class="fas fa-paper-plane mr-1"></i> Ajukan Semua
+                                                </button>
+                                            </form>
+                                        @elseif(Auth::user()->user_type == 'B')
+                                            {{-- Admin Kabupaten: alur verifikasi regional ke Provinsi --}}
                                             @if($status_verifikasi['status_pengajuan'] == 0)
-                                                <a href="{{ route('ajukan') }}" class="btn btn-primary btn-modern shadow-sm mr-2" style="background-color: #1e3a5f; border-color: #1e3a5f;"><i class="fas fa-paper-plane mr-1"></i> Ajukan Verifikasi Data</a>
+                                                <a href="{{ route('ajukan') }}" class="btn btn-primary btn-modern shadow-sm mr-2" style="background-color:#1e3a5f;border-color:#1e3a5f;">
+                                                    <i class="fas fa-paper-plane mr-1"></i> Ajukan Verifikasi Data
+                                                </a>
                                             @elseif($status_verifikasi['status_pengajuan'] == 1)
-                                                @if($status_verifikasi['status_verifikasi'] == null)
-                                                    @if(!empty($status_verifikasi['id']))
-                                                        <form action="{{ route('verifikasi.cancel', $status_verifikasi['id']) }}" method="POST" class="m-0 mr-2">
-                                                            @csrf
-                                                            <button type="submit" class="btn btn-outline-danger btn-modern shadow-sm" onclick="return confirm('Batalkan pengajuan data tahun ini?')">
-                                                                <i class="fas fa-times mr-1"></i> Batalkan Pengajuan
-                                                            </button>
-                                                        </form>
-                                                    @endif
-                                                @elseif($status_verifikasi['status_verifikasi'] == 2)
+                                                @if($status_verifikasi['status_verifikasi'] == 2)
                                                     <form action="{{ route('verifikasi.update', $status_verifikasi['id']) }}" method="POST" class="m-0 mr-2 d-flex align-items-center flex-wrap">
                                                         {{ csrf_field() }}
                                                         <span class="text-danger small mr-3 mb-2 mb-md-0"><b>Catatan Revisi:</b> {{ $status_verifikasi['catatan'] }}</span>
-                                                        <button type="submit" class="btn btn-danger btn-modern shadow-sm"><i class="fas fa-paper-plane mr-1"></i> Ajukan Ulang Verifikasi</button>
+                                                        <button type="submit" class="btn btn-danger btn-modern shadow-sm">
+                                                            <i class="fas fa-paper-plane mr-1"></i> Ajukan Ulang Verifikasi
+                                                        </button>
                                                     </form>
+                                                @else
+                                                    <a href="{{ route('ajukan') }}" class="btn btn-primary btn-modern shadow-sm mr-2" style="background-color:#1e3a5f;border-color:#1e3a5f;">
+                                                        <i class="fas fa-redo mr-1"></i> Ajukan Ulang Verifikasi
+                                                    </a>
                                                 @endif
                                             @endif
                                         @endif
