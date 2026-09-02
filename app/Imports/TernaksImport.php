@@ -11,6 +11,12 @@ use Maatwebsite\Excel\Concerns\WithHeadingRow;
 
 class TernaksImport implements ToModel, WithHeadingRow
 {
+    public function __construct(
+        private readonly array $allowedPeternakIds,
+        private readonly int $tahunData
+    ) {
+    }
+
     /**
     * @param array $row
     *
@@ -18,6 +24,28 @@ class TernaksImport implements ToModel, WithHeadingRow
     */
     public function model(array $row)
     {
+        $peternakId = (int) ($row['peternak_id'] ?? 0);
+        $tahun = (int) ($row['tahun'] ?? 0);
+
+        if (! in_array($peternakId, $this->allowedPeternakIds, true)) {
+            throw new \RuntimeException('Peternak ID '.$peternakId.' tidak ditemukan atau tidak termasuk wilayah Anda.');
+        }
+
+        if ($tahun !== $this->tahunData) {
+            throw new \RuntimeException('Tahun import harus sama dengan tahun data aktif ('.$this->tahunData.').');
+        }
+
+        if (Ternak::where('peternak_id', $peternakId)->where('tahun', $tahun)->exists()) {
+            throw new \RuntimeException('Data ternak untuk peternak ID '.$peternakId.' pada tahun '.$tahun.' sudah ada.');
+        }
+
+        foreach (\App\Support\MutasiSchema::animalColumns() as $column) {
+            $value = $row[$column] ?? 0;
+            if (! is_numeric($value) || (float) $value < 0) {
+                throw new \RuntimeException('Kolom '.$column.' harus berupa angka dan tidak boleh negatif.');
+            }
+        }
+
         $init_val = 0;
         // $now = date('Y');
         // $user_kecamatan = Auth::user()->kecamatan_id;

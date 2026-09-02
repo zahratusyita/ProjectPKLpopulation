@@ -18,4 +18,17 @@ class Verifikasi extends Model
         'tanggal_verifikasi',
         'catatan'
     ];
+
+    public static function invalidateProvincialApproval(int $kabKotaId, int $tahun): int
+    {
+        return static::query()
+            ->where('data_type', 'B')
+            ->where('daerah', $kabKotaId)
+            ->where('tahun', $tahun)
+            ->where('status_verifikasi', 1)
+            ->update([
+                'status_pengajuan' => false,
+                'status_verifikasi' => false,
+            ]);
+    }
 }

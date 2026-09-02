@@ -394,3 +394,14 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+document.querySelectorAll('input[type="number"]:not(#tahun)').forEach(function (input) {
+    input.min = '0';
+    input.addEventListener('input', function () {
+        if (this.value !== '' && Number(this.value) < 0) this.value = 0;
+    });
+});
+</script>
+@endpush

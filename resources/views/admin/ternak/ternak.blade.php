@@ -241,8 +241,10 @@
                                     <th rowspan="2" style="vertical-align:middle;">Ayam Layer</th>
                                     <th rowspan="2" style="vertical-align:middle;">Itik</th>
                                     <th rowspan="2" style="vertical-align:middle;">Puyuh</th>
-                                    @if(Auth::user()->user_type == "C")
+                                    @if(Auth::user()->user_type == "B" OR Auth::user()->user_type == "C")
                                     <th rowspan="3" style="vertical-align:middle; text-align:center;">Status</th>
+                                    @endif
+                                    @if(Auth::user()->user_type == "C")
                                     <th rowspan="3" style="vertical-align:middle; text-align:center;">Aksi</th>
                                     @endif
                                 </tr>
@@ -360,21 +362,26 @@
                                                 <td style="text-align:center">{{ $t->ayam_petelur + 0 }}</td>
                                                 <td style="text-align:center">{{ $t->itik + 0 }}</td>
                                                 <td style="text-align:center">{{ $t->puyuh + 0 }}</td>
-                                                @if(Auth::user()->user_type == "C")
+                                                @if(Auth::user()->user_type == "B" OR Auth::user()->user_type == "C")
                                                 {{-- STATUS BADGE: langsung dari $t->status_pengajuan --}}
                                                 <td style="text-align:center;">
                                                     @php $sp = (int)($t->status_pengajuan ?? 0); @endphp
                                                     @if($sp === 0)
-                                                        <span class="badge" style="background-color:#f1f5f9;color:#64748b;padding:0.4rem 0.6rem;border-radius:6px;font-weight:500;border:1px solid #e2e8f0;">Belum</span>
+                                                        <span class="badge" style="background-color:#f1f5f9;color:#64748b;padding:0.4rem 0.6rem;border-radius:6px;font-weight:500;border:1px solid #e2e8f0;">Draft Kecamatan</span>
                                                     @elseif($sp === 1)
-                                                        <span class="badge" style="background-color:#fffff0;color:#d69e2e;padding:0.4rem 0.6rem;border-radius:6px;font-weight:500;border:1px solid #fef08a;">Menunggu</span>
+                                                        <span class="badge" style="background-color:#fffff0;color:#d69e2e;padding:0.4rem 0.6rem;border-radius:6px;font-weight:500;border:1px solid #fef08a;">Menunggu Kabupaten</span>
                                                     @elseif($sp === 2)
-                                                        <span class="badge" style="background-color:#f0fff4;color:#38a169;padding:0.4rem 0.6rem;border-radius:6px;font-weight:500;border:1px solid #bbf7d0;">Tervalidasi</span>
+                                                        <span class="badge" style="background-color:#f0fff4;color:#38a169;padding:0.4rem 0.6rem;border-radius:6px;font-weight:500;border:1px solid #bbf7d0;">Terverifikasi Kabupaten</span>
                                                     @elseif($sp === 3)
                                                         <span class="badge" style="background-color:#fee2e2;color:#dc2626;padding:0.4rem 0.6rem;border-radius:6px;font-weight:500;border:1px solid #fecaca;">Revisi</span>
+                                                        @if(Auth::user()->user_type == "C" && !empty($t->keterangan))
+                                                            <div class="small text-danger mt-1" style="white-space:normal;max-width:220px;">{{ $t->keterangan }}</div>
+                                                        @endif
                                                     @endif
                                                 </td>
+                                                @endif
 
+                                                @if(Auth::user()->user_type == "C")
                                                 {{-- AKSI PER BARIS --}}
                                                 <td>
                                                     <div class="d-flex align-items-center justify-content-center" style="gap:4px;">
@@ -453,24 +460,26 @@
                                             </form>
                                         @elseif(Auth::user()->user_type == 'B')
                                             {{-- Admin Kabupaten: alur verifikasi regional ke Provinsi --}}
-                                            @if($status_verifikasi['status_pengajuan'] == 0)
+                                            @if($status_verifikasi['status_verifikasi'] == 2)
+                                                <div class="m-0 mr-2 d-flex align-items-center flex-wrap">
+                                                    <span class="text-danger small mr-3 mb-2 mb-md-0"><b>Catatan Revisi:</b> {{ $status_verifikasi['catatan'] }}</span>
+                                                    <a href="{{ route('ajukan') }}" class="btn btn-danger btn-modern shadow-sm">
+                                                        <i class="fas fa-paper-plane mr-1"></i> Ajukan Ulang Verifikasi
+                                                    </a>
+                                                </div>
+                                            @elseif($status_verifikasi['status_verifikasi'] == 1)
+                                                <span class="badge badge-success p-2 mr-2">
+                                                    <i class="fas fa-check-circle mr-1"></i> Terverifikasi Provinsi
+                                                </span>
+                                                @if(!empty($status_verifikasi['catatan']))
+                                                    <span class="text-muted small mr-3">Catatan: {{ $status_verifikasi['catatan'] }}</span>
+                                                @endif
+                                            @elseif($status_verifikasi['status_pengajuan'] == 0)
                                                 <a href="{{ route('ajukan') }}" class="btn btn-primary btn-modern shadow-sm mr-2" style="background-color:#1e3a5f;border-color:#1e3a5f;">
                                                     <i class="fas fa-paper-plane mr-1"></i> Ajukan Verifikasi Data
                                                 </a>
                                             @elseif($status_verifikasi['status_pengajuan'] == 1)
-                                                @if($status_verifikasi['status_verifikasi'] == 2)
-                                                    <form action="{{ route('verifikasi.update', $status_verifikasi['id']) }}" method="POST" class="m-0 mr-2 d-flex align-items-center flex-wrap">
-                                                        {{ csrf_field() }}
-                                                        <span class="text-danger small mr-3 mb-2 mb-md-0"><b>Catatan Revisi:</b> {{ $status_verifikasi['catatan'] }}</span>
-                                                        <button type="submit" class="btn btn-danger btn-modern shadow-sm">
-                                                            <i class="fas fa-paper-plane mr-1"></i> Ajukan Ulang Verifikasi
-                                                        </button>
-                                                    </form>
-                                                @else
-                                                    <a href="{{ route('ajukan') }}" class="btn btn-primary btn-modern shadow-sm mr-2" style="background-color:#1e3a5f;border-color:#1e3a5f;">
-                                                        <i class="fas fa-redo mr-1"></i> Ajukan Ulang Verifikasi
-                                                    </a>
-                                                @endif
+                                                <span class="badge badge-warning p-2 mr-2">Menunggu verifikasi Provinsi</span>
                                             @endif
                                         @endif
                                         

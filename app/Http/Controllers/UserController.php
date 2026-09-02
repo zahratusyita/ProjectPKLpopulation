@@ -19,6 +19,7 @@ class UserController extends Controller
      */
     public function index()
     {
+        $this->ensureAdminProvinsi();
         if(Auth::check()){
             $kab_kota = Kabupaten_kota::all();
             $kecamatan = Kecamatan::all();
@@ -40,6 +41,7 @@ class UserController extends Controller
      */
     public function create()
     {
+        $this->ensureAdminProvinsi();
         $user_type = Auth::user()->user_type;
         if($user_type == "A"){
             $kab_kota = Kabupaten_kota::all();  
@@ -52,10 +54,11 @@ class UserController extends Controller
      */
     public function store(Request $request)
     {
+        $this->ensureAdminProvinsi();
         $validated = $request->validate([
             'name'              => 'required|regex:/^[a-zA-Z\s]+$/',
-            'email'             => 'required|email',
-            'user_type'         => 'required',
+            'email'             => 'required|email|unique:users,email',
+            'user_type'         => 'required|in:A,B,C',
             'password'          => 'required|confirmed|min:8'
         ]);
 
@@ -84,6 +87,7 @@ class UserController extends Controller
      */
     public function edit(string $id)
     {
+        $this->ensureAdminProvinsi();
         $user_type = Auth::user()->user_type;
         if($user_type != "A"){
             return redirect('user')->withErrors(['error' => 'Akses ditolak']);
@@ -104,12 +108,13 @@ class UserController extends Controller
      */
     public function update(Request $request, string $id)
     {
+        $this->ensureAdminProvinsi();
         $user = User::findOrFail($id);
         
         $rules = [
             'name'              => 'required|regex:/^[a-zA-Z\s]+$/',
             'email'             => 'required|email|unique:users,email,'.$id,
-            'user_type'         => 'required',
+            'user_type'         => 'required|in:A,B,C',
         ];
 
         if($request->filled('password')){
@@ -138,7 +143,8 @@ class UserController extends Controller
      */
     public function destroy(string $id)
     {
-        $user = User::find($id);
+        $this->ensureAdminProvinsi();
+        $user = User::findOrFail($id);
         $user->delete();
 
         return redirect('user');
@@ -146,6 +152,7 @@ class UserController extends Controller
 
     public function search(Request $request)
     {
+        $this->ensureAdminProvinsi();
         $user_type = Auth::user()->user_type;
         $user_kab_kota = Auth::user()->kab_kota_id;
         $user_kecamatan = Auth::user()->kecamatan_id;
@@ -193,11 +200,17 @@ class UserController extends Controller
 
     public function import(Request $request)
     {
+        $this->ensureAdminProvinsi();
         $validated = $request->validate([
             'file' => 'mimes:xls,xlsx'
         ]);
 
         Excel::import(new UsersImport(), $request->file('file'));
         return redirect('user');
+    }
+
+    private function ensureAdminProvinsi(): void
+    {
+        abort_unless(Auth::user()->user_type === 'A', 403);
     }
 }

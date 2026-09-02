@@ -212,62 +212,82 @@
                             </table>
                         @elseif(Auth::user()->user_type == 'B')
                             {{-- ========================================================= --}}
-                            {{-- TAMPILAN ADMIN B (KABUPATEN) : ANTRIAN PER-TERNAK        --}}
+                            {{-- TAMPILAN ADMIN B (KABUPATEN) : RIWAYAT PER-TERNAK        --}}
                             {{-- ========================================================= --}}
                             <table class="table table-modern text-nowrap align-middle">
                                 <thead>
                                 <tr>
                                     <th>No.</th>
+                                    <th>Tahun</th>
                                     <th>Peternak (NIK)</th>
                                     <th>Kecamatan</th>
-                                    <th>Desa/Kel</th>
                                     <th>Status Pengajuan</th>
+                                    <th>Tanggal Pengajuan</th>
+                                    <th>Status Verifikasi</th>
+                                    <th>Tanggal Verifikasi</th>
                                     <th>Aksi</th>
                                 </tr>
                                 </thead>
                                 <tbody>
                                     @forelse($ternak_pending as $v)
+                                        @php $status = (int) ($v->status_pengajuan ?? 0); @endphp
                                         <tr>
                                             <td>{{ $no++ }}</td>
+                                            <td>{{ $v->tahun }}</td>
                                             <td>{{ $v->nama }}<br><small class="text-muted">{{ $v->nik }}</small></td>
-                                            @foreach($kecamatan as $kc)
-                                                @if($v->kecamatan_id == $kc->id)
-                                                <td>{{ $kc->nama_kecamatan }}</td>
-                                                @endif
-                                            @endforeach
-                                            
                                             <td>
-                                                @foreach($desa_kel as $dk)
-                                                    @if($v->desa_kel_id == $dk->id)
-                                                        {{ $dk->nama_desa_kel }}
+                                                @foreach($kecamatan as $kc)
+                                                    @if($v->kecamatan_id == $kc->id)
+                                                        {{ $kc->nama_kecamatan }}
                                                     @endif
                                                 @endforeach
                                             </td>
-
-                                            <td><span class="badge" style="background-color: #fffff0; color: #d69e2e; padding: 0.4rem 0.6rem; border-radius: 6px; font-weight: 500; border: 1px solid #fef08a;">Menunggu</span></td>
-                                            
+                                            <td>
+                                                @if($status === 0)
+                                                    <span class="badge badge-secondary">Draft</span>
+                                                @elseif($status === 1)
+                                                    <span class="badge badge-warning">Sudah diajukan</span>
+                                                @elseif($status === 2)
+                                                    <span class="badge badge-success">Sudah diajukan</span>
+                                                @else
+                                                    <span class="badge badge-danger">Perlu diajukan ulang</span>
+                                                @endif
+                                            </td>
+                                            <td>{{ $status === 0 ? '-' : $v->updated_at }}</td>
+                                            <td>
+                                                @if($status === 0)
+                                                    <span class="text-muted">Belum diajukan</span>
+                                                @elseif($status === 1)
+                                                    <span class="badge badge-warning">Menunggu verifikasi</span>
+                                                @elseif($status === 2)
+                                                    <span class="badge badge-success">Sudah diverifikasi</span>
+                                                @else
+                                                    <span class="badge badge-danger">Ditolak / Revisi</span>
+                                                @endif
+                                            </td>
+                                            <td>{{ in_array($status, [2, 3], true) ? $v->updated_at : '-' }}</td>
                                             <td>
                                                 <div class="d-flex align-items-center">
-                                                    <form action="{{ route('verifikasi.single', $v->id) }}" method="POST" class="m-0 mr-2">
-                                                        @csrf
-                                                        <button type="submit" class="btn btn-sm btn-success btn-modern shadow-sm" onclick="return confirm('Verifikasi data peternak {{ $v->nama }}?')">
+                                                    @if($status === 1)
+                                                        <button type="button" class="btn btn-sm btn-primary btn-modern shadow-sm" data-toggle="modal" data-target="#modal-kabupaten-{{ $v->id }}">
                                                             <i class="fas fa-check mr-1"></i> Verifikasi
                                                         </button>
-                                                    </form>
-                                                    
-                                                    <button type="button" class="btn btn-sm btn-danger btn-modern shadow-sm" data-toggle="modal" data-target="#modal-reject-{{ $v->id }}">
-                                                        <i class="fas fa-times mr-1"></i> Tolak / Revisi
-                                                    </button>
+                                                    @elseif(!empty($v->keterangan))
+                                                        <button type="button" class="btn btn-sm btn-light btn-modern shadow-sm" data-toggle="modal" data-target="#modal-detail-{{ $v->id }}">
+                                                            <i class="fas fa-eye mr-1"></i> Detail
+                                                        </button>
+                                                    @else
+                                                        <span class="text-muted">Selesai</span>
+                                                    @endif
                                                 </div>
                                             </td>
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="6" class="text-center py-5">
+                                            <td colspan="9" class="text-center py-5">
                                                 <div class="text-muted">
-                                                    <i class="fas fa-check-circle fa-3x mb-3 text-success" style="opacity: 0.5;"></i>
-                                                    <h5>Semua data dari Kecamatan sudah diverifikasi</h5>
-                                                    <p>Tidak ada data pengajuan baru yang menunggu.</p>
+                                                    <i class="fas fa-history fa-3x mb-3" style="opacity: 0.5;"></i>
+                                                    <h5>Belum ada data pada tahun aktif</h5>
                                                 </div>
                                             </td>
                                         </tr>
@@ -287,7 +307,7 @@
                                         dari Total <strong>{{ $ternak_pending->total() }}</strong> Data
                                     </div>
                                     <div class="d-flex flex-wrap align-items-center justify-content-end mt-2 mt-md-0 w-100 pagination-modern">
-                                        @if($ternak_pending->total() > 0)
+                                        @if(($pending_count ?? 0) > 0)
                                             <form action="{{ route('verifikasi.all') }}" method="POST" class="mr-3 m-0">
                                                 @csrf
                                                 <button type="submit" class="btn btn-success btn-modern shadow-sm" onclick="return confirm('Verifikasi SEMUA data yang sedang menunggu?')">
@@ -333,7 +353,7 @@
             <form action="{{ route('verifikasi.update', $vk->id) }}" method="POST">
             {{ csrf_field() }}
                 <div>
-                    <textarea class="form-control" name="catatan" id="catatan" placeholder="Catatan&hellip;"></textarea>
+                    <textarea class="form-control" name="catatan" id="catatan" placeholder="Catatan (wajib jika ditolak)&hellip;"></textarea>
                 </div>
                 <div class="row m-3">
                     <div class="col-sm-6">
@@ -359,34 +379,61 @@
     <!-- /.modal -->
     @endforeach
 @elseif(Auth::user()->user_type == 'B')
-    {{-- Modal Tolak/Revisi untuk Admin B --}}
+    {{-- Modal Verifikasi untuk Admin B, mengikuti pola modal Admin Provinsi --}}
     @foreach($ternak_pending as $vk)
-    <div class="modal fade" id="modal-reject-{{ $vk->id }}">
+    @php $statusModal = (int) ($vk->status_pengajuan ?? 0); @endphp
+    @if($statusModal === 1)
+    <div class="modal fade" id="modal-kabupaten-{{ $vk->id }}">
     <div class="modal-dialog">
         <div class="modal-content">
-        <div class="modal-header bg-danger">
-            <h5 class="modal-title text-white"><i class="fas fa-exclamation-circle mr-2"></i> Tolak / Minta Revisi</h5>
-            <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+        <div class="modal-header">
+            <h5 class="modal-title">Verifikasi Data Kecamatan</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
             <span aria-hidden="true">&times;</span>
             </button>
         </div>
-        <form action="{{ route('verifikasi.reject', $vk->id) }}" method="POST">
+        <form method="POST">
             @csrf
             <div class="modal-body">
-                <p>Anda akan menolak/meminta revisi untuk data peternak <strong>{{ $vk->nama }}</strong>.</p>
+                <p class="mb-1"><strong>{{ $vk->nama }}</strong> ({{ $vk->nik }})</p>
+                <p class="text-muted">Tahun {{ $vk->tahun }} - data diajukan oleh Kecamatan.</p>
                 <div class="form-group">
-                    <label for="catatan">Catatan Revisi <span class="text-danger">*</span></label>
-                    <textarea class="form-control" name="catatan" id="catatan" rows="4" placeholder="Masukkan alasan penolakan atau catatan revisi... (wajib diisi)" required></textarea>
+                    <label for="catatan-{{ $vk->id }}">Catatan</label>
+                    <textarea class="form-control" name="catatan" id="catatan-{{ $vk->id }}" rows="4" placeholder="Opsional saat menerima, wajib saat menolak"></textarea>
                 </div>
             </div>
-            <div class="modal-footer justify-content-between">
+            <div class="modal-footer">
                 <button type="button" class="btn btn-light" data-dismiss="modal">Batal</button>
-                <button type="submit" class="btn btn-danger"><i class="fas fa-paper-plane mr-1"></i> Kirim Revisi</button>
+                <button type="submit" formaction="{{ route('verifikasi.reject', $vk->id) }}" class="btn btn-danger" onclick="var note=document.getElementById('catatan-{{ $vk->id }}'); if(!note.value.trim()){note.setCustomValidity('Catatan wajib diisi saat menolak.'); note.reportValidity(); return false;} note.setCustomValidity('');">
+                    <i class="fas fa-times mr-1"></i> Tolak
+                </button>
+                <button type="submit" formaction="{{ route('verifikasi.single', $vk->id) }}" class="btn btn-success">
+                    <i class="fas fa-check mr-1"></i> Verifikasi / Terima
+                </button>
             </div>
         </form>
         </div>
     </div>
     </div>
+    @elseif(!empty($vk->keterangan))
+    <div class="modal fade" id="modal-detail-{{ $vk->id }}">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h6 class="modal-title">Catatan Verifikasi</h6>
+                    <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-2"><strong>{{ $vk->nama }}</strong> ({{ $vk->nik }})</p>
+                    <p class="mb-0">{{ $vk->keterangan }}</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-dismiss="modal">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
     @endforeach
 @endif
 @endsection

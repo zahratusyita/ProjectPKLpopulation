@@ -121,7 +121,7 @@ class MutasiTernakController extends Controller
         $this->ensureCanManageMutasi();
         $peternak = $this->peternakQueryByUser()->get();
 
-        $mutasi = MutasiTernak::findOrFail($id);
+        $mutasi = $this->findMutasiForUser($jenis, $id);
 
         return view('admin.mutasi.edit', [
             'mutasi' => $mutasi,
@@ -135,7 +135,7 @@ class MutasiTernakController extends Controller
     public function update(Request $request, $jenis, $id)
     {
         $this->ensureCanManageMutasi();
-        $mutasi = MutasiTernak::findOrFail($id);
+        $mutasi = $this->findMutasiForUser($jenis, $id);
         $data = $this->validatedMutasiData($request, $jenis);
         $this->ternakMutationService->update($mutasi, $data);
 
@@ -145,7 +145,7 @@ class MutasiTernakController extends Controller
     public function destroy($jenis, $id)
     {
         $this->ensureCanManageMutasi();
-        $mutasi = MutasiTernak::findOrFail($id);
+        $mutasi = $this->findMutasiForUser($jenis, $id);
         $this->ternakMutationService->delete($mutasi);
 
         return redirect('mutasi/'.$jenis)->with('success', 'Data mutasi berhasil dihapus.');
@@ -231,6 +231,12 @@ class MutasiTernakController extends Controller
         }
 
         $validated = $request->validate($rules);
+
+        if ((int) date('Y', strtotime($validated['tanggal'])) !== (int) session()->get('tahun_data')) {
+            throw ValidationException::withMessages([
+                'tanggal' => 'Tahun tanggal mutasi harus sama dengan tahun data aktif.',
+            ]);
+        }
 
         $data = [
             'tanggal' => $validated['tanggal'],
@@ -323,5 +329,14 @@ class MutasiTernakController extends Controller
         if (Auth::user()->user_type !== 'C') {
             abort(403);
         }
+    }
+
+    private function findMutasiForUser(string $jenis, string $id): MutasiTernak
+    {
+        return MutasiTernak::query()
+            ->where('jenis_mutasi', $jenis)
+            ->where('tahun', session()->get('tahun_data'))
+            ->whereHas('Peternak', fn ($query) => $query->where('kecamatan_id', Auth::user()->kecamatan_id))
+            ->findOrFail($id);
     }
 }

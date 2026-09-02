@@ -14,6 +14,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Validation\Rule;
+use App\Support\MutasiSchema;
+use Illuminate\Validation\ValidationException;
 
 class TernakController extends Controller
 {
@@ -54,7 +57,6 @@ class TernakController extends Controller
                         ->select('peternaks.id', 'peternaks.nama', 'peternaks.nik', 'peternaks.kab_kota_id', 'peternaks.kecamatan_id', 'peternaks.desa_kel_id', 'ternaks.*')
                         ->where('ternaks.tahun', $now)
                         ->where('peternaks.kab_kota_id', $user_kab_kota)
-                        ->where('ternaks.status_pengajuan', 2) // hanya yang sudah diverifikasi
                         ->paginate(25);
                 } else {
                     echo "Tidak ada peternak";
@@ -101,6 +103,7 @@ class TernakController extends Controller
      */
     public function create()
     {
+        $this->ensureCanManageTernak();
         $kecamatan = Auth::user()->kecamatan_id;
         $now = session()->get('tahun_data');
         if ($kecamatan) {
@@ -117,10 +120,11 @@ class TernakController extends Controller
      */
     public function store(Request $request)
     {
+        $this->ensureCanManageTernak();
+        $peternakIds = Peternak::where('kecamatan_id', Auth::user()->kecamatan_id)->pluck('id')->all();
         $validated = $request->validate([
-            'tahun' => 'numeric',
-            'peternak_id' => 'numeric',
-            'sapi_anak_jantan' => 'numeric|nullable',
+            'peternak' => ['required', 'integer', Rule::in($peternakIds), Rule::unique('ternaks', 'peternak_id')->where('tahun', session()->get('tahun_data'))],
+            'sapi_anak_jantan' => 'integer|min:0|nullable',
             'sapi_anak_betina' => 'numeric|nullable',
             'sapi_muda_jantan' => 'numeric|nullable',
             'sapi_muda_betina' => 'numeric|nullable',
@@ -166,6 +170,8 @@ class TernakController extends Controller
 
             'keterangan' => 'regex:/^[a-zA-Z0-9.\s]+$/|nullable'
         ]);
+
+        $this->ensureNonNegativeAnimalData($validated);
 
         $init_val = 0;
         Ternak::create([
@@ -234,9 +240,10 @@ class TernakController extends Controller
      */
     public function edit(string $id)
     {
+        $this->ensureCanManageTernak();
         $kecamatan = Auth::user()->kecamatan_id;
         $peternak = Peternak::where('kecamatan_id', $kecamatan)->get();
-        $ternak = Ternak::find($id);
+        $ternak = $this->findTernakForUser($id);
         return view('admin.ternak.edit_ternak', [
             'ternak' => $ternak,
             'peternak' => $peternak
@@ -248,6 +255,7 @@ class TernakController extends Controller
      */
     public function update(Request $request, string $id)
     {
+        $this->ensureCanManageTernak();
         $validated = $request->validate([
             'sapi_anak_jantan' => 'numeric|nullable',
             'sapi_anak_betina' => 'numeric|nullable',
@@ -296,7 +304,11 @@ class TernakController extends Controller
             'keterangan' => 'regex:/^[a-zA-Z0-9.\s]+$/|nullable'
         ]);
 
-        $ternak = Ternak::find($id);
+        $this->ensureNonNegativeAnimalData($validated);
+
+        $ternak = $this->findTernakForUser($id);
+
+        abort_if((int) $ternak->status_pengajuan === 1 || (int) $ternak->status_pengajuan === 2, 403);
 
         $ternak->sapi_anak_jantan = $request->sapi_anak_jantan;
         $ternak->sapi_anak_betina = $request->sapi_anak_betina;
@@ -344,7 +356,6 @@ class TernakController extends Controller
 
         $ternak->keterangan = $request->keterangan;
 
-        $ternak->update($request->all());
         $ternak->save();
 
         return redirect('ternak');
@@ -355,7 +366,9 @@ class TernakController extends Controller
      */
     public function destroy(string $id)
     {
-        $ternak = Ternak::find($id);
+        $this->ensureCanManageTernak();
+        $ternak = $this->findTernakForUser($id);
+        abort_if((int) $ternak->status_pengajuan === 1 || (int) $ternak->status_pengajuan === 2, 403);
         $ternak->delete();
 
         return redirect('ternak');
@@ -370,6 +383,7 @@ class TernakController extends Controller
      */
     public function ajukanSingle(string $id)
     {
+        $this->ensureCanManageTernak();
         $user_kecamatan = Auth::user()->kecamatan_id;
 
         $valid = DB::table('ternaks')
@@ -380,7 +394,10 @@ class TernakController extends Controller
             ->exists();
 
         if ($valid) {
-            Ternak::where('id', $id)->update(['status_pengajuan' => 1]);
+            Ternak::where('id', $id)->update([
+                'status_pengajuan' => 1,
+                'updated_at' => now(),
+            ]);
         }
 
         return redirect('ternak')->with('success', 'Data berhasil diajukan untuk verifikasi.');
@@ -391,6 +408,7 @@ class TernakController extends Controller
      */
     public function ajukanSemua()
     {
+        $this->ensureCanManageTernak();
         $user_kecamatan = Auth::user()->kecamatan_id;
         $now = session()->get('tahun_data');
 
@@ -399,7 +417,10 @@ class TernakController extends Controller
             ->where('peternaks.kecamatan_id', $user_kecamatan)
             ->where('ternaks.tahun', $now)
             ->whereIn('ternaks.status_pengajuan', [0, 3])
-            ->update(['ternaks.status_pengajuan' => 1]);
+            ->update([
+                'ternaks.status_pengajuan' => 1,
+                'ternaks.updated_at' => now(),
+            ]);
 
         return redirect('ternak')->with('success', 'Semua data berhasil diajukan untuk verifikasi.');
     }
@@ -409,6 +430,7 @@ class TernakController extends Controller
      */
     public function batalAjukan(string $id)
     {
+        $this->ensureCanManageTernak();
         $user_kecamatan = Auth::user()->kecamatan_id;
 
         $valid = DB::table('ternaks')
@@ -430,6 +452,7 @@ class TernakController extends Controller
      */
     public function batalSemua()
     {
+        $this->ensureCanManageTernak();
         $user_kecamatan = Auth::user()->kecamatan_id;
         $now = session()->get('tahun_data');
 
@@ -489,8 +512,7 @@ class TernakController extends Controller
                     ->join('ternaks', 'peternaks.id', '=', 'ternaks.peternak_id')
                     ->select('peternaks.id', 'peternaks.nik', 'peternaks.nama', 'peternaks.kab_kota_id', 'peternaks.kecamatan_id', 'peternaks.desa_kel_id', 'ternaks.*')
                     ->where('ternaks.tahun', $now)
-                    ->where('peternaks.kab_kota_id', $user_kab_kota)
-                    ->where('ternaks.status_pengajuan', 2); // hanya yang sudah diverifikasi
+                    ->where('peternaks.kab_kota_id', $user_kab_kota);
 
                 if (isset($ft_kecamatan)) {
                     $ternak->where('peternaks.kecamatan_id', $ft_kecamatan);
@@ -866,13 +888,39 @@ class TernakController extends Controller
 
     public function import(Request $request)
     {
+        $this->ensureCanManageTernak();
         $validated = $request->validate([
             'file' => 'mimes:xls,xlsx'
         ]);
 
-        Excel::import(new TernaksImport(), $request->file('file'));
+        Excel::import(new TernaksImport(
+            Peternak::where('kecamatan_id', Auth::user()->kecamatan_id)->pluck('id')->all(),
+            (int) session()->get('tahun_data')
+        ), $request->file('file'));
         return redirect('ternak');
     }
+
+    private function ensureCanManageTernak(): void
+    {
+        abort_unless(Auth::user()->user_type === 'C', 403);
+    }
+
+    private function findTernakForUser(string $id): Ternak
+    {
+        return Ternak::query()
+            ->where('tahun', session()->get('tahun_data'))
+            ->whereHas('Peternak', fn ($query) => $query->where('kecamatan_id', Auth::user()->kecamatan_id))
+            ->findOrFail($id);
+    }
+
+    private function ensureNonNegativeAnimalData(array $validated): void
+    {
+        foreach (MutasiSchema::animalColumns() as $column) {
+            if (isset($validated[$column]) && (float) $validated[$column] < 0) {
+                throw ValidationException::withMessages([
+                    $column => 'Jumlah ternak tidak boleh bernilai negatif.',
+                ]);
+            }
+        }
+    }
 }
-
-

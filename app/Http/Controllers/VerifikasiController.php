@@ -32,6 +32,7 @@ class VerifikasiController extends Controller
                     ->select('verifikasis.*', 'kabupaten_kotas.id as kab_kota_id', 'kabupaten_kotas.nama_kab_kota')
                     ->where('verifikasis.data_type', 'B')
                     ->where('verifikasis.tahun', $tahun_data)
+                    ->where('verifikasis.status_pengajuan', true)
                     ->paginate(25);
 
                 return view('admin.verifikasi.verifikasi', [
@@ -45,20 +46,21 @@ class VerifikasiController extends Controller
                 $kecamatan = Kecamatan::where('kab_kota_id', $user_kab_kota)->get();
                 $desa_kel = Desa_kelurahan::all();
 
-                // Admin Kabupaten: tampilkan data ternak yang diajukan oleh kecamatan di bawahnya (status_pengajuan=1)
+                // Admin Kabupaten: tampilkan seluruh status sebagai riwayat verifikasi tahun aktif.
                 $ternak_pending = DB::table('peternaks')
                     ->join('ternaks', 'peternaks.id', '=', 'ternaks.peternak_id')
                     ->select('peternaks.id', 'peternaks.nama', 'peternaks.nik', 'peternaks.kab_kota_id', 'peternaks.kecamatan_id', 'peternaks.desa_kel_id', 'ternaks.*')
                     ->where('ternaks.tahun', $tahun_data)
-                    ->where('peternaks.kab_kota_id', $user_kab_kota)
-                    ->where('ternaks.status_pengajuan', 1)
-                    ->paginate(25);
+                    ->where('peternaks.kab_kota_id', $user_kab_kota);
+                $pending_count = (clone $ternak_pending)->where('ternaks.status_pengajuan', 1)->count();
+                $ternak_pending = $ternak_pending->orderByDesc('ternaks.updated_at')->paginate(25);
 
                 return view('admin.verifikasi.verifikasi', [
                     'ternak_pending' => $ternak_pending,
                     'kab_kota' => $kab_kota,
                     'kecamatan' => $kecamatan,
                     'desa_kel' => $desa_kel,
+                    'pending_count' => $pending_count,
                 ]);
             }
         } else {
@@ -72,24 +74,37 @@ class VerifikasiController extends Controller
     public function store(Request $request)
     {
         $user_type = Auth::user()->user_type;
-        if ($user_type == 'B') {
-            $daerah_asal = Auth::user()->kab_kota_id;
+        abort_unless($user_type === 'B', 403);
 
-            Verifikasi::updateOrCreate(
+        $daerah_asal = Auth::user()->kab_kota_id;
+        $tahunData = session()->get('tahun_data');
+        $dataTernak = DB::table('ternaks')
+            ->join('peternaks', 'peternaks.id', '=', 'ternaks.peternak_id')
+            ->where('peternaks.kab_kota_id', $daerah_asal)
+            ->where('ternaks.tahun', $tahunData);
+
+        if (! (clone $dataTernak)->exists()) {
+            return redirect('ternak')->withErrors(['verifikasi' => 'Tidak ada data ternak pada tahun aktif untuk diajukan.']);
+        }
+
+        if ((clone $dataTernak)->where('ternaks.status_pengajuan', '!=', 2)->exists()) {
+            return redirect('ternak')->withErrors(['verifikasi' => 'Semua data Kecamatan harus diverifikasi terlebih dahulu sebelum diajukan ke Provinsi.']);
+        }
+
+        Verifikasi::updateOrCreate(
                 [
                     'data_type' => $user_type,
-                    'tahun' => session()->get('tahun_data'),
+                    'tahun' => $tahunData,
                     'daerah' => $daerah_asal,
                 ],
                 [
                     'status_pengajuan' => true,
                     'tanggal_pengajuan' => now(),
-                    'status_verifikasi' => null,
+                    'status_verifikasi' => false,
                     'tanggal_verifikasi' => now(),
                     'catatan' => null,
                 ]
             );
-        }
 
         return redirect('ternak');
     }
@@ -100,14 +115,30 @@ class VerifikasiController extends Controller
     public function update(Request $request, string $id)
     {
         if (Auth::user()->user_type == 'A') {
+            $request->validate([
+                'verifikasi' => 'required|in:1,2',
+                'catatan' => 'required_if:verifikasi,2|nullable|string',
+            ]);
             $verifikasi = Verifikasi::findOrFail($id);
 
-            $verifikasi->status_verifikasi = $request->verifikasi;
-            $verifikasi->tanggal_verifikasi = now();
-            $verifikasi->catatan = $request->catatan;
+            abort_unless($verifikasi->data_type === 'B' && (string) $verifikasi->tahun === (string) session()->get('tahun_data'), 403);
 
-            $verifikasi->update();
-            $verifikasi->save();
+            DB::transaction(function () use ($verifikasi, $request) {
+                $verifikasi->status_verifikasi = (int) $request->verifikasi;
+                $verifikasi->status_pengajuan = (int) $request->verifikasi === 1;
+                $verifikasi->tanggal_verifikasi = now();
+                $verifikasi->catatan = $request->catatan;
+                $verifikasi->save();
+
+                if ((int) $request->verifikasi === 2) {
+                    DB::table('ternaks')
+                        ->join('peternaks', 'peternaks.id', '=', 'ternaks.peternak_id')
+                        ->where('peternaks.kab_kota_id', $verifikasi->daerah)
+                        ->where('ternaks.tahun', $verifikasi->tahun)
+                        ->where('ternaks.status_pengajuan', 2)
+                        ->update(['ternaks.status_pengajuan' => 3]);
+                }
+            });
 
             return redirect('verifikasi');
         }
@@ -131,7 +162,7 @@ class VerifikasiController extends Controller
             (int) $verifikasi->daerah !== (int) $daerah ||
             (string) $verifikasi->tahun !== (string) session()->get('tahun_data') ||
             !$verifikasi->status_pengajuan ||
-            $verifikasi->status_verifikasi !== null
+            (int) $verifikasi->status_verifikasi !== 0
         ) {
             abort(403);
         }
@@ -144,7 +175,7 @@ class VerifikasiController extends Controller
     /**
      * Verifikasi SATU data ternak (Admin B).
      */
-    public function verifySingle(string $id)
+    public function verifySingle(Request $request, string $id)
     {
         $user_type = Auth::user()->user_type;
         if ($user_type !== 'B')
@@ -155,10 +186,19 @@ class VerifikasiController extends Controller
         if (!$peternak || $peternak->kab_kota_id != Auth::user()->kab_kota_id) {
             abort(403);
         }
+        abort_unless((string) $ternak->tahun === (string) session()->get('tahun_data'), 403);
 
         if ((int) $ternak->status_pengajuan === 1) {
+            $request->validate(['catatan' => 'nullable|string']);
             $ternak->status_pengajuan = 2;
+            if ($request->filled('catatan')) {
+                $ternak->keterangan = $request->catatan;
+            }
             $ternak->save();
+            Verifikasi::invalidateProvincialApproval(
+                (int) $peternak->kab_kota_id,
+                (int) $ternak->tahun
+            );
         }
 
         return redirect('verifikasi')->with('success', 'Data berhasil diverifikasi.');
@@ -173,12 +213,22 @@ class VerifikasiController extends Controller
         $tahun_data = session()->get('tahun_data');
 
         if ($user_type == 'B') {
-            DB::table('ternaks')
+            $updated = DB::table('ternaks')
                 ->join('peternaks', 'peternaks.id', '=', 'ternaks.peternak_id')
                 ->where('peternaks.kab_kota_id', Auth::user()->kab_kota_id)
                 ->where('ternaks.tahun', $tahun_data)
                 ->where('ternaks.status_pengajuan', 1)
-                ->update(['ternaks.status_pengajuan' => 2]);
+                ->update([
+                    'ternaks.status_pengajuan' => 2,
+                    'ternaks.updated_at' => now(),
+                ]);
+
+            if ($updated > 0) {
+                Verifikasi::invalidateProvincialApproval(
+                    (int) Auth::user()->kab_kota_id,
+                    (int) $tahun_data
+                );
+            }
         }
 
         return redirect('verifikasi')->with('success', 'Semua data berhasil diverifikasi.');
@@ -193,11 +243,13 @@ class VerifikasiController extends Controller
         if ($user_type !== 'B')
             abort(403);
 
+        $request->validate(['catatan' => 'required|string']);
         $ternak = Ternak::findOrFail($id);
         $peternak = DB::table('peternaks')->where('id', $ternak->peternak_id)->first();
         if (!$peternak || $peternak->kab_kota_id != Auth::user()->kab_kota_id) {
             abort(403);
         }
+        abort_unless((string) $ternak->tahun === (string) session()->get('tahun_data'), 403);
 
         if ((int) $ternak->status_pengajuan === 1) {
             $ternak->status_pengajuan = 3; // Revisi
@@ -228,7 +280,8 @@ class VerifikasiController extends Controller
                 ->join('kabupaten_kotas', 'verifikasis.daerah', '=', 'kabupaten_kotas.id')
                 ->select('verifikasis.*', 'kabupaten_kotas.id as kab_kota_id', 'kabupaten_kotas.nama_kab_kota')
                 ->where('verifikasis.data_type', 'B')
-                ->where('verifikasis.tahun', $tahun_data);
+                ->where('verifikasis.tahun', $tahun_data)
+                ->where('verifikasis.status_pengajuan', true);
 
             if (isset($ft_kab_kota) && $ft_kab_kota != '') {
                 $verifikasi->where('verifikasis.daerah', $ft_kab_kota);
@@ -252,8 +305,7 @@ class VerifikasiController extends Controller
                 ->join('ternaks', 'peternaks.id', '=', 'ternaks.peternak_id')
                 ->select('peternaks.id', 'peternaks.nama', 'peternaks.nik', 'peternaks.kab_kota_id', 'peternaks.kecamatan_id', 'peternaks.desa_kel_id', 'ternaks.*')
                 ->where('ternaks.tahun', $tahun_data)
-                ->where('peternaks.kab_kota_id', $user_kab_kota)
-                ->where('ternaks.status_pengajuan', 1);
+                ->where('peternaks.kab_kota_id', $user_kab_kota);
 
             if (isset($ft_kecamatan) && $ft_kecamatan != '') {
                 $ternak_pending->where('peternaks.kecamatan_id', $ft_kecamatan);
@@ -265,13 +317,15 @@ class VerifikasiController extends Controller
                 $ternak_pending->where('peternaks.nama', 'like', "%" . $search . "%");
             }
 
-            $result = $ternak_pending->paginate(25);
+            $pending_count = (clone $ternak_pending)->where('ternaks.status_pengajuan', 1)->count();
+            $result = $ternak_pending->orderByDesc('ternaks.updated_at')->paginate(25);
 
             return view('admin.verifikasi.verifikasi', [
                 'ternak_pending' => $result,
                 'kab_kota' => $kab_kota,
                 'kecamatan' => $kecamatan,
                 'desa_kel' => $desa_kel,
+                'pending_count' => $pending_count,
             ]);
         }
     }
