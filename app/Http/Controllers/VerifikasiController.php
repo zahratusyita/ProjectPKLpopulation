@@ -25,7 +25,7 @@ class VerifikasiController extends Controller
             if ($user_type == 'A') {
                 $kab_kota = Kabupaten_kota::all();
                 $kecamatan = Kecamatan::all();
-                
+
                 // Admin Provinsi: tampilkan pengajuan regional dari Kabupaten (tabel verifikasis)
                 $verifikasi = DB::table('verifikasis')
                     ->join('kabupaten_kotas', 'verifikasis.daerah', '=', 'kabupaten_kotas.id')
@@ -33,7 +33,7 @@ class VerifikasiController extends Controller
                     ->where('verifikasis.data_type', 'B')
                     ->where('verifikasis.tahun', $tahun_data)
                     ->paginate(25);
-                
+
                 return view('admin.verifikasi.verifikasi', [
                     'verifikasi' => $verifikasi,
                     'kab_kota' => $kab_kota,
@@ -74,19 +74,19 @@ class VerifikasiController extends Controller
         $user_type = Auth::user()->user_type;
         if ($user_type == 'B') {
             $daerah_asal = Auth::user()->kab_kota_id;
-            
+
             Verifikasi::updateOrCreate(
                 [
-                    'data_type'  => $user_type,
-                    'tahun'      => session()->get('tahun_data'),
-                    'daerah'     => $daerah_asal,
+                    'data_type' => $user_type,
+                    'tahun' => session()->get('tahun_data'),
+                    'daerah' => $daerah_asal,
                 ],
                 [
-                    'status_pengajuan'   => true,
-                    'tanggal_pengajuan'  => now(),
-                    'status_verifikasi'  => null,
+                    'status_pengajuan' => true,
+                    'tanggal_pengajuan' => now(),
+                    'status_verifikasi' => null,
                     'tanggal_verifikasi' => now(),
-                    'catatan'            => null,
+                    'catatan' => null,
                 ]
             );
         }
@@ -147,7 +147,8 @@ class VerifikasiController extends Controller
     public function verifySingle(string $id)
     {
         $user_type = Auth::user()->user_type;
-        if ($user_type !== 'B') abort(403);
+        if ($user_type !== 'B')
+            abort(403);
 
         $ternak = Ternak::findOrFail($id);
         $peternak = DB::table('peternaks')->where('id', $ternak->peternak_id)->first();
@@ -189,7 +190,8 @@ class VerifikasiController extends Controller
     public function rejectSingle(Request $request, string $id)
     {
         $user_type = Auth::user()->user_type;
-        if ($user_type !== 'B') abort(403);
+        if ($user_type !== 'B')
+            abort(403);
 
         $ternak = Ternak::findOrFail($id);
         $peternak = DB::table('peternaks')->where('id', $ternak->peternak_id)->first();
@@ -260,7 +262,7 @@ class VerifikasiController extends Controller
                 $ternak_pending->where('peternaks.desa_kel_id', $ft_desa_kel);
             }
             if (isset($search) && $search != '') {
-                $ternak_pending->where('peternaks.nama', 'like', "%".$search."%");
+                $ternak_pending->where('peternaks.nama', 'like', "%" . $search . "%");
             }
 
             $result = $ternak_pending->paginate(25);
