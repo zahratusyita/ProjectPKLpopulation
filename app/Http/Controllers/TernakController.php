@@ -9,7 +9,6 @@ use App\Models\Kecamatan;
 use App\Models\Peternak;
 use App\Models\Ternak;
 use App\Models\Verifikasi;
-use App\Helpers\TotalTernak;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -40,6 +39,14 @@ class TernakController extends Controller
                         ->select('peternaks.id', 'peternaks.nama', 'peternaks.nik', 'peternaks.kab_kota_id', 'peternaks.kecamatan_id', 'peternaks.desa_kel_id', 'ternaks.*')
                         ->where('ternaks.tahun', $now)
                         ->where('ternaks.status_pengajuan', 2) // hanya yang sudah diverifikasi
+                        ->whereExists(function ($query) {
+                            $query->selectRaw('1')
+                                ->from('verifikasis')
+                                ->whereColumn('verifikasis.daerah', 'peternaks.kab_kota_id')
+                                ->whereColumn('verifikasis.tahun', 'ternaks.tahun')
+                                ->where('verifikasis.data_type', 'B')
+                                ->where('verifikasis.status_pengajuan', true);
+                        })
                         ->paginate(25);
                 } else {
                     echo "Tidak ada peternak";
@@ -57,6 +64,7 @@ class TernakController extends Controller
                         ->select('peternaks.id', 'peternaks.nama', 'peternaks.nik', 'peternaks.kab_kota_id', 'peternaks.kecamatan_id', 'peternaks.desa_kel_id', 'ternaks.*')
                         ->where('ternaks.tahun', $now)
                         ->where('peternaks.kab_kota_id', $user_kab_kota)
+                        ->whereIn('ternaks.status_pengajuan', [1, 2, 3])
                         ->paginate(25);
                 } else {
                     echo "Tidak ada peternak";
@@ -485,7 +493,15 @@ class TernakController extends Controller
                     ->join('ternaks', 'peternaks.id', '=', 'ternaks.peternak_id')
                     ->select('peternaks.id', 'peternaks.nik', 'peternaks.nama', 'peternaks.kab_kota_id', 'peternaks.kecamatan_id', 'peternaks.desa_kel_id', 'ternaks.*')
                     ->where('ternaks.tahun', $now)
-                    ->where('ternaks.status_pengajuan', 2); // hanya yang sudah diverifikasi
+                    ->where('ternaks.status_pengajuan', 2)
+                    ->whereExists(function ($query) {
+                        $query->selectRaw('1')
+                            ->from('verifikasis')
+                            ->whereColumn('verifikasis.daerah', 'peternaks.kab_kota_id')
+                            ->whereColumn('verifikasis.tahun', 'ternaks.tahun')
+                            ->where('verifikasis.data_type', 'B')
+                            ->where('verifikasis.status_pengajuan', true);
+                    });
 
                 if (isset($ft_kab_kota)) {
                     $ternak->where('peternaks.kab_kota_id', $ft_kab_kota);
@@ -512,7 +528,8 @@ class TernakController extends Controller
                     ->join('ternaks', 'peternaks.id', '=', 'ternaks.peternak_id')
                     ->select('peternaks.id', 'peternaks.nik', 'peternaks.nama', 'peternaks.kab_kota_id', 'peternaks.kecamatan_id', 'peternaks.desa_kel_id', 'ternaks.*')
                     ->where('ternaks.tahun', $now)
-                    ->where('peternaks.kab_kota_id', $user_kab_kota);
+                    ->where('peternaks.kab_kota_id', $user_kab_kota)
+                    ->whereIn('ternaks.status_pengajuan', [1, 2, 3]);
 
                 if (isset($ft_kecamatan)) {
                     $ternak->where('peternaks.kecamatan_id', $ft_kecamatan);
@@ -601,7 +618,16 @@ class TernakController extends Controller
                 $ternak = DB::table('peternaks')
                     ->join('ternaks', 'peternaks.id', '=', 'ternaks.peternak_id')
                     ->select('peternaks.id', 'peternaks.nama', 'peternaks.nik', 'peternaks.kab_kota_id', 'peternaks.kecamatan_id', 'peternaks.desa_kel_id', 'ternaks.*')
-                    ->where('ternaks.tahun', $now);
+                    ->where('ternaks.tahun', $now)
+                    ->where('ternaks.status_pengajuan', 2)
+                    ->whereExists(function ($query) {
+                        $query->selectRaw('1')
+                            ->from('verifikasis')
+                            ->whereColumn('verifikasis.daerah', 'peternaks.kab_kota_id')
+                            ->whereColumn('verifikasis.tahun', 'ternaks.tahun')
+                            ->where('verifikasis.data_type', 'B')
+                            ->where('verifikasis.status_pengajuan', true);
+                    });
                 // $total_ternak = TotalTernak::total_kolom_pr($tahun, $peternak);
 
                 if (isset($ft_kab_kota)) {
@@ -628,7 +654,8 @@ class TernakController extends Controller
                     ->join('ternaks', 'peternaks.id', '=', 'ternaks.peternak_id')
                     ->select('peternaks.id', 'peternaks.nama', 'peternaks.nik', 'peternaks.kab_kota_id', 'peternaks.kecamatan_id', 'peternaks.desa_kel_id', 'ternaks.*')
                     ->where('ternaks.tahun', $now)
-                    ->where('peternaks.kab_kota_id', $user_kab_kota);
+                    ->where('peternaks.kab_kota_id', $user_kab_kota)
+                    ->whereIn('ternaks.status_pengajuan', [1, 2, 3]);
                 // $total_ternak = TotalTernak::total_kolom_kk($tahun, $user_kab_kota, $peternak);
 
                 if (isset($ft_kecamatan)) {
@@ -682,17 +709,9 @@ class TernakController extends Controller
 
         $result = $ternak->get();
 
-        if ($user_type == "A") {
-            $peternak = Peternak::all();
-            $total_ternak = TotalTernak::total_kolom_pr($now, $peternak, $ft_kab_kota, $ft_kecamatan, $ft_desa_kel);
-        } elseif ($user_type == "B") {
-            $user_kab_kota = Auth::user()->kab_kota_id;
-            $peternak = Peternak::where('kab_kota_id', $user_kab_kota)->get();
-            $total_ternak = TotalTernak::total_kolom_kk($now, $user_kab_kota, $peternak, $ft_kecamatan, $ft_desa_kel);
-        } elseif ($user_type == "C") {
-            $user_kecamatan = Auth::user()->kecamatan_id;
-            $peternak = Peternak::where('kecamatan_id', $user_kecamatan)->get();
-            $total_ternak = TotalTernak::total_kolom_kc($now, $user_kecamatan, $peternak, $ft_desa_kel);
+        $total_ternak = [];
+        foreach (MutasiSchema::animalColumns() as $column) {
+            $total_ternak[$column] = (int) $result->sum($column);
         }
 
         echo '<center><h1>Data Ternak</h1></center>';

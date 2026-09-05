@@ -26,23 +26,35 @@ class HomeController extends Controller
                 if($user_type == "A"){
                     $peternak = Peternak::all();
                     if(!empty($peternak)){
-                        $sapi = Ternak::where('tahun', $now)
+                        $ternakProvinsi = Ternak::where('tahun', $now)
+                            ->where('status_pengajuan', 2)
+                            ->whereHas('Peternak', function ($query) use ($now) {
+                                $query->whereExists(function ($submission) use ($now) {
+                                    $submission->selectRaw('1')
+                                        ->from('verifikasis')
+                                        ->whereColumn('verifikasis.daerah', 'peternaks.kab_kota_id')
+                                        ->where('verifikasis.tahun', $now)
+                                        ->where('verifikasis.data_type', 'B')
+                                        ->where('verifikasis.status_pengajuan', true);
+                                });
+                            });
+                        $sapi = (clone $ternakProvinsi)
                             ->sum(DB::raw('sapi_anak_jantan + sapi_anak_betina + sapi_muda_jantan + sapi_muda_betina + sapi_dewasa_jantan + sapi_dewasa_betina'));  
-                        $kerbau = Ternak::where('tahun', $now)
+                        $kerbau = (clone $ternakProvinsi)
                             ->sum(DB::raw('kerbau_anak_jantan + kerbau_anak_betina + kerbau_muda_jantan + kerbau_muda_betina + kerbau_dewasa_jantan + kerbau_dewasa_betina'));
-                        $kuda = Ternak::where('tahun', $now)
+                        $kuda = (clone $ternakProvinsi)
                             ->sum(DB::raw('kuda_anak_jantan + kuda_anak_betina + kuda_muda_jantan + kuda_muda_betina + kuda_dewasa_jantan + kuda_dewasa_betina'));
-                        $kambing = Ternak::where('tahun', $now)
+                        $kambing = (clone $ternakProvinsi)
                             ->sum(DB::raw('kambing_anak_jantan + kambing_anak_betina + kambing_muda_jantan + kambing_muda_betina + kambing_dewasa_jantan + kambing_dewasa_betina'));
-                        $babi = Ternak::where('tahun', $now)
+                        $babi = (clone $ternakProvinsi)
                             ->sum(DB::raw('babi_anak_jantan + babi_anak_betina + babi_muda_jantan + babi_muda_betina + babi_dewasa_jantan + babi_dewasa_betina'));
-                        $domba = Ternak::where('tahun', $now)
+                        $domba = (clone $ternakProvinsi)
                             ->sum(DB::raw('domba_anak_jantan + domba_anak_betina + domba_muda_jantan + domba_muda_betina + domba_dewasa_jantan + domba_dewasa_betina'));
-                        $ayam_ras = Ternak::where('tahun', $now)->sum('ayam_ras');
-                        $ayam_buras = Ternak::where('tahun', $now)->sum('ayam_buras');   
-                        $ayam_petelur = Ternak::where('tahun', $now)->sum('ayam_petelur');
-                        $itik = Ternak::where('tahun', $now)->sum('itik'); 
-                        $puyuh = Ternak::where('tahun', $now)->sum('puyuh');
+                        $ayam_ras = (clone $ternakProvinsi)->sum('ayam_ras');
+                        $ayam_buras = (clone $ternakProvinsi)->sum('ayam_buras');
+                        $ayam_petelur = (clone $ternakProvinsi)->sum('ayam_petelur');
+                        $itik = (clone $ternakProvinsi)->sum('itik');
+                        $puyuh = (clone $ternakProvinsi)->sum('puyuh');
                     }else{
                         $sapi = 0;
                         $kerbau = 0;
@@ -61,49 +73,31 @@ class HomeController extends Controller
                     $kab_kota = Kabupaten_kota::where('id', $user_kab_kota)->get();
                     $peternak = Peternak::where('kab_kota_id', $user_kab_kota)->get();
                     if(!empty($peternak)){
-                        $sapi = DB::table('peternaks')
+                        $ternakKabupaten = DB::table('peternaks')
                             ->join('ternaks', 'peternaks.id', '=', 'ternaks.peternak_id')
                             ->where('ternaks.tahun', $now)->where('peternaks.kab_kota_id', $user_kab_kota)
+                            ->whereIn('ternaks.status_pengajuan', [1, 2, 3]);
+                        $sapi = (clone $ternakKabupaten)
                             ->sum(DB::raw('sapi_anak_jantan + sapi_anak_betina + sapi_muda_jantan + sapi_muda_betina + sapi_dewasa_jantan + sapi_dewasa_betina'));
-                        $kerbau = DB::table('peternaks')
-                            ->join('ternaks', 'peternaks.id', '=', 'ternaks.peternak_id')
-                            ->where('ternaks.tahun', $now)->where('peternaks.kab_kota_id', $user_kab_kota)
+                        $kerbau = (clone $ternakKabupaten)
                             ->sum(DB::raw('kerbau_anak_jantan + kerbau_anak_betina + kerbau_muda_jantan + kerbau_muda_betina + kerbau_dewasa_jantan + kerbau_dewasa_betina'));
-                        $kuda = DB::table('peternaks')
-                            ->join('ternaks', 'peternaks.id', '=', 'ternaks.peternak_id')
-                            ->where('ternaks.tahun', $now)->where('peternaks.kab_kota_id', $user_kab_kota)
+                        $kuda = (clone $ternakKabupaten)
                             ->sum(DB::raw('kuda_anak_jantan + kuda_anak_betina + kuda_muda_jantan + kuda_muda_betina + kuda_dewasa_jantan + kuda_dewasa_betina'));
-                        $kambing = DB::table('peternaks')
-                            ->join('ternaks', 'peternaks.id', '=', 'ternaks.peternak_id')
-                            ->where('ternaks.tahun', $now)->where('peternaks.kab_kota_id', $user_kab_kota)
+                        $kambing = (clone $ternakKabupaten)
                             ->sum(DB::raw('kambing_anak_jantan + kambing_anak_betina + kambing_muda_jantan + kambing_muda_betina + kambing_dewasa_jantan + kambing_dewasa_betina'));
-                        $babi = DB::table('peternaks')
-                            ->join('ternaks', 'peternaks.id', '=', 'ternaks.peternak_id')
-                            ->where('ternaks.tahun', $now)->where('peternaks.kab_kota_id', $user_kab_kota)
+                        $babi = (clone $ternakKabupaten)
                             ->sum(DB::raw('babi_anak_jantan + babi_anak_betina + babi_muda_jantan + babi_muda_betina + babi_dewasa_jantan + babi_dewasa_betina'));
-                        $domba = DB::table('peternaks')
-                            ->join('ternaks', 'peternaks.id', '=', 'ternaks.peternak_id')
-                            ->where('ternaks.tahun', $now)->where('peternaks.kab_kota_id', $user_kab_kota)
+                        $domba = (clone $ternakKabupaten)
                             ->sum(DB::raw('domba_anak_jantan + domba_anak_betina + domba_muda_jantan + domba_muda_betina + domba_dewasa_jantan + domba_dewasa_betina'));
-                        $ayam_ras = DB::table('peternaks')
-                            ->join('ternaks', 'peternaks.id', '=', 'ternaks.peternak_id')
-                            ->where('ternaks.tahun', $now)->where('peternaks.kab_kota_id', $user_kab_kota)
+                        $ayam_ras = (clone $ternakKabupaten)
                             ->sum(DB::raw('ayam_ras'));
-                        $ayam_buras = DB::table('peternaks')
-                            ->join('ternaks', 'peternaks.id', '=', 'ternaks.peternak_id')
-                            ->where('ternaks.tahun', $now)->where('peternaks.kab_kota_id', $user_kab_kota)
+                        $ayam_buras = (clone $ternakKabupaten)
                             ->sum(DB::raw('ayam_buras'));
-                        $ayam_petelur = DB::table('peternaks')
-                            ->join('ternaks', 'peternaks.id', '=', 'ternaks.peternak_id')
-                            ->where('ternaks.tahun', $now)->where('peternaks.kab_kota_id', $user_kab_kota)
+                        $ayam_petelur = (clone $ternakKabupaten)
                             ->sum(DB::raw('ayam_petelur'));
-                        $itik = DB::table('peternaks')
-                            ->join('ternaks', 'peternaks.id', '=', 'ternaks.peternak_id')
-                            ->where('ternaks.tahun', $now)->where('peternaks.kab_kota_id', $user_kab_kota)
+                        $itik = (clone $ternakKabupaten)
                             ->sum(DB::raw('itik'));
-                        $puyuh = DB::table('peternaks')
-                            ->join('ternaks', 'peternaks.id', '=', 'ternaks.peternak_id')
-                            ->where('ternaks.tahun', $now)->where('peternaks.kab_kota_id', $user_kab_kota)
+                        $puyuh = (clone $ternakKabupaten)
                             ->sum(DB::raw('puyuh'));
                     }else{
                         $sapi = 0;

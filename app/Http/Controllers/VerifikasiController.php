@@ -51,7 +51,8 @@ class VerifikasiController extends Controller
                     ->join('ternaks', 'peternaks.id', '=', 'ternaks.peternak_id')
                     ->select('peternaks.id', 'peternaks.nama', 'peternaks.nik', 'peternaks.kab_kota_id', 'peternaks.kecamatan_id', 'peternaks.desa_kel_id', 'ternaks.*')
                     ->where('ternaks.tahun', $tahun_data)
-                    ->where('peternaks.kab_kota_id', $user_kab_kota);
+                    ->where('peternaks.kab_kota_id', $user_kab_kota)
+                    ->whereIn('ternaks.status_pengajuan', [1, 2, 3]);
                 $pending_count = (clone $ternak_pending)->where('ternaks.status_pengajuan', 1)->count();
                 $ternak_pending = $ternak_pending->orderByDesc('ternaks.updated_at')->paginate(25);
 
@@ -305,7 +306,8 @@ class VerifikasiController extends Controller
                 ->join('ternaks', 'peternaks.id', '=', 'ternaks.peternak_id')
                 ->select('peternaks.id', 'peternaks.nama', 'peternaks.nik', 'peternaks.kab_kota_id', 'peternaks.kecamatan_id', 'peternaks.desa_kel_id', 'ternaks.*')
                 ->where('ternaks.tahun', $tahun_data)
-                ->where('peternaks.kab_kota_id', $user_kab_kota);
+                ->where('peternaks.kab_kota_id', $user_kab_kota)
+                ->whereIn('ternaks.status_pengajuan', [1, 2, 3]);
 
             if (isset($ft_kecamatan) && $ft_kecamatan != '') {
                 $ternak_pending->where('peternaks.kecamatan_id', $ft_kecamatan);

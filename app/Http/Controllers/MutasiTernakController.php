@@ -43,10 +43,11 @@ class MutasiTernakController extends Controller
             $desa_kel = Desa_kelurahan::all();
 
             if($user_type == "A"){
-                // Can see all
+                $this->restrictMutasiToProvinceSubmission($query);
             }elseif($user_type == "B"){
                 $user_kab_kota = Auth::user()->kab_kota_id;
                 $query->where('peternaks.kab_kota_id', $user_kab_kota);
+                $this->restrictMutasiToCountySubmission($query);
                 $kab_kota = Kabupaten_kota::where('id', $user_kab_kota)->get();
                 $kecamatan = Kecamatan::where('kab_kota_id', $user_kab_kota)->get();
             }elseif($user_type == "C"){
@@ -281,8 +282,11 @@ class MutasiTernakController extends Controller
             ->where('mutasi_ternaks.jenis_mutasi', $jenis)
             ->where('mutasi_ternaks.tahun', $now);
 
-        if($user_type == "B"){
+        if($user_type == "A"){
+            $this->restrictMutasiToProvinceSubmission($query);
+        }elseif($user_type == "B"){
             $query->where('peternaks.kab_kota_id', Auth::user()->kab_kota_id);
+            $this->restrictMutasiToCountySubmission($query);
         }elseif($user_type == "C"){
             $query->where('peternaks.kab_kota_id', Auth::user()->kab_kota_id)
                 ->where('peternaks.kecamatan_id', Auth::user()->kecamatan_id);
@@ -308,6 +312,35 @@ class MutasiTernakController extends Controller
         }
 
         return $query;
+    }
+
+    private function restrictMutasiToCountySubmission($query): void
+    {
+        $query->whereExists(function ($ternak) {
+            $ternak->selectRaw('1')
+                ->from('ternaks')
+                ->whereColumn('ternaks.peternak_id', 'mutasi_ternaks.peternak_id')
+                ->whereColumn('ternaks.tahun', 'mutasi_ternaks.tahun')
+                ->whereIn('ternaks.status_pengajuan', [1, 2, 3]);
+        });
+    }
+
+    private function restrictMutasiToProvinceSubmission($query): void
+    {
+        $query->whereExists(function ($ternak) {
+            $ternak->selectRaw('1')
+                ->from('ternaks')
+                ->whereColumn('ternaks.peternak_id', 'mutasi_ternaks.peternak_id')
+                ->whereColumn('ternaks.tahun', 'mutasi_ternaks.tahun')
+                ->where('ternaks.status_pengajuan', 2);
+        })->whereExists(function ($submission) {
+            $submission->selectRaw('1')
+                ->from('verifikasis')
+                ->whereColumn('verifikasis.daerah', 'peternaks.kab_kota_id')
+                ->whereColumn('verifikasis.tahun', 'mutasi_ternaks.tahun')
+                ->where('verifikasis.data_type', 'B')
+                ->where('verifikasis.status_pengajuan', true);
+        });
     }
 
     private function peternakQueryByUser()
